@@ -1,8 +1,10 @@
 import { BlurView } from "expo-blur";
-import { Tabs } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Tabs, router } from "expo-router";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, View, useColorScheme, TouchableOpacity, Text } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 import { useColors } from "@/hooks/useColors";
 
@@ -22,38 +24,43 @@ function ClassicTabLayout() {
         tabBarLabelStyle: {
           fontFamily: "Cairo_500Medium",
           fontSize: 11,
+          marginBottom: 4,
         },
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.background,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          elevation: 0,
-          ...(isWeb ? { height: 84 } : {}),
+          backgroundColor: isIOS ? "transparent" : colors.card,
+          borderTopWidth: 0,
+          elevation: 10,
+          height: isWeb ? 84 : 84,
+          paddingBottom: isWeb ? 20 : 20,
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 16,
         },
         tabBarBackground: () =>
           isIOS ? (
             <BlurView
-              intensity={100}
+              intensity={80}
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
-          ) : isWeb ? (
+          ) : (
             <View
               style={[
                 StyleSheet.absoluteFill,
-                { backgroundColor: colors.background },
+                { backgroundColor: colors.card },
               ]}
             />
-          ) : null,
+          ),
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="profile"
         options={{
-          title: "الرئيسية",
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={22} color={color} />
+          title: "الملف الشخصي",
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name="user" size={24} color={color} style={{ fontWeight: focused ? "bold" : "normal" }} />
           ),
         }}
       />
@@ -61,36 +68,57 @@ function ClassicTabLayout() {
         name="bookings"
         options={{
           title: "حجوزاتي",
-          tabBarIcon: ({ color }) => (
-            <Feather name="calendar" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name="calendar" size={24} color={color} style={{ fontWeight: focused ? "bold" : "normal" }} />
           ),
         }}
       />
       <Tabs.Screen
-        name="offers"
+        name="placeholder"
         options={{
-          title: "العروض",
-          tabBarIcon: ({ color }) => (
-            <Feather name="tag" size={22} color={color} />
+          title: "",
+          tabBarButton: () => (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push("/services");
+              }}
+              style={styles.floatingButtonContainer}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.floatingButton}
+              >
+                <MaterialCommunityIcons name="broom" size={28} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={[styles.floatingButtonLabel, { color: colors.mutedForeground }]}>احجز الآن</Text>
+            </TouchableOpacity>
           ),
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: "المحادثات",
-          tabBarIcon: ({ color }) => (
-            <Feather name="message-circle" size={22} color={color} />
+          title: "الرسائل",
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name="message-circle" size={24} color={color} style={{ fontWeight: focused ? "bold" : "normal" }} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="index"
         options={{
-          title: "الملف الشخصي",
-          tabBarIcon: ({ color }) => (
-            <Feather name="user" size={22} color={color} />
+          title: "الرئيسية",
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name="home" size={24} color={color} style={{ fontWeight: focused ? "bold" : "normal" }} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="offers"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
@@ -100,3 +128,29 @@ function ClassicTabLayout() {
 export default function TabLayout() {
   return <ClassicTabLayout />;
 }
+
+const styles = StyleSheet.create({
+  floatingButtonContainer: {
+    top: -20,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+  },
+  floatingButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#16C47F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  floatingButtonLabel: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 11,
+    marginTop: 4,
+  },
+});

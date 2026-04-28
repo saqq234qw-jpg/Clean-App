@@ -5,10 +5,9 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
-import { SectionHeader } from "@/components/SectionHeader";
 
 const PAYMENT_METHODS = [
-  { id: "1", title: "بطاقة ائتمانية / مدى", subtitle: "**** **** **** 4242", badge: "موصى بها", type: "visa" },
+  { id: "1", title: "بطاقة ائتمانية / مدى", subtitle: "**** **** **** 4242", badge: "موصى بها", type: "visa", selected: true },
   { id: "2", title: "Apple Pay", subtitle: "ادفع باستخدام Apple Pay", type: "apple" },
   { id: "3", title: "الدفع نقداً", subtitle: "ادفع نقداً عند استلام الخدمة", type: "cash" },
   { id: "4", title: "تمارا - دفع لاحقاً", subtitle: "قسم فاتورتك إلى 4 دفعات بدون فوائد", type: "tamara" },
@@ -21,175 +20,211 @@ export default function PaymentScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-          <Feather name="chevron-right" size={24} color={colors.foreground} />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={[styles.safeBadge, { backgroundColor: colors.successLight }]}>
+           <Feather name="shield" size={12} color={colors.success} />
+           <Text style={[styles.safeBadgeText, { color: colors.success }]}>دفع آمن</Text>
+        </View>
+        <View style={styles.headerTitleContainer}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>الدفع</Text>
           <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>اختر طريقة الدفع المناسبة</Text>
         </View>
-        <View style={[styles.safeBadge, { backgroundColor: colors.successLight }]}>
-          <MaterialCommunityIcons name="shield-check" size={14} color={colors.success} />
-          <Text style={[styles.safeBadgeText, { color: colors.success }]}>دفع آمن</Text>
-        </View>
+        <TouchableOpacity style={styles.iconCircle} onPress={() => router.back()}>
+          <Feather name="chevron-right" size={24} color={colors.foreground} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <LinearGradient
-          colors={[colors.secondary, colors.border]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.totalCard}
-        >
-          <Image source={require("@/assets/images/illustration-wallet.png")} style={styles.walletImage} resizeMode="contain" />
-          <View style={styles.totalTextContainer}>
-            <Text style={[styles.totalLabel, { color: colors.mutedForeground }]}>المبلغ الإجمالي</Text>
-            <Text style={[styles.totalAmount, { color: colors.primary }]}>190 ر.س</Text>
-            <View style={styles.encryptionRow}>
-              <Feather name="lock" size={12} color={colors.mutedForeground} />
-              <Text style={[styles.encryptionText, { color: colors.mutedForeground }]}>جميع المعاملات مشفرة وآمنة</Text>
-            </View>
-          </View>
-        </LinearGradient>
+      <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+        {/* Total Amount Card */}
+        <View style={styles.totalWrap}>
+           <LinearGradient
+             colors={[colors.accentLight, colors.secondary]}
+             start={{ x: 0, y: 0 }}
+             end={{ x: 1, y: 1 }}
+             style={styles.totalCard}
+           >
+              <Image source={require("@/assets/images/illustration-wallet.png")} style={styles.walletImage} />
+              <View style={styles.totalContent}>
+                 <Text style={[styles.totalLabel, { color: colors.mutedForeground }]}>المبلغ الإجمالي</Text>
+                 <Text style={[styles.totalAmount, { color: colors.accent }]}>190 ر.س</Text>
+                 <View style={styles.lockRow}>
+                    <Feather name="lock" size={12} color={colors.mutedForeground} />
+                    <Text style={[styles.lockText, { color: colors.mutedForeground }]}>جميع المعاملات مشفرة وآمنة</Text>
+                 </View>
+              </View>
+           </LinearGradient>
+        </View>
 
-        <SectionHeader title="اختر طريقة الدفع" />
+        {/* Payment Methods Section */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>اختر طريقة الدفع</Text>
         
         <View style={styles.methodsContainer}>
-          {PAYMENT_METHODS.map(method => {
+          {PAYMENT_METHODS.map((method) => {
             const isSelected = selectedMethod === method.id;
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={method.id}
                 onPress={() => setSelectedMethod(method.id)}
                 style={[
-                  styles.methodRow, 
+                  styles.methodItem,
                   { 
                     backgroundColor: colors.card,
-                    borderColor: isSelected ? colors.primary : colors.border 
-                  },
-                  isSelected && { backgroundColor: colors.primaryLight + "30" }
+                    borderColor: isSelected ? colors.accent : "transparent",
+                    borderWidth: isSelected ? 2 : 0
+                  }
                 ]}
               >
                 <View style={styles.radioContainer}>
-                  <View style={[styles.radioOuter, { borderColor: isSelected ? colors.primary : colors.mutedForeground }]}>
-                    {isSelected && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-                  </View>
-                </View>
-                
-                <View style={styles.methodInfo}>
-                  <View style={styles.methodTitleRow}>
-                    <Text style={[styles.methodTitle, { color: colors.foreground }]}>{method.title}</Text>
-                    {method.badge && (
-                      <View style={[styles.recBadge, { backgroundColor: colors.successLight }]}>
-                        <Text style={[styles.recBadgeText, { color: colors.success }]}>{method.badge}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.methodSubtitle, { color: colors.mutedForeground }]}>{method.subtitle}</Text>
-                </View>
-                
-                <View style={[styles.methodLogo, { backgroundColor: colors.secondary }]}>
-                  {method.type === "visa" && <Text style={{ fontFamily: "Cairo_700Bold", color: "#1A1F71", fontSize: 16 }}>VISA</Text>}
-                  {method.type === "apple" && <MaterialCommunityIcons name="apple" size={24} color="#000" />}
-                  {method.type === "cash" && <Text style={{ fontSize: 20 }}>💵</Text>}
-                  {method.type === "tamara" && (
-                    <LinearGradient colors={["#FF7A8A", "#FFB347"]} style={styles.tamaraLogo}>
-                      <Text style={{ fontFamily: "Cairo_700Bold", color: "#FFF", fontSize: 10 }}>tamara</Text>
-                    </LinearGradient>
+                  {isSelected ? (
+                    <View style={[styles.radioActive, { backgroundColor: colors.accent }]}>
+                       <Feather name="check" size={12} color="#FFFFFF" />
+                    </View>
+                  ) : (
+                    <View style={[styles.radioInactive, { borderColor: colors.border }]} />
                   )}
+                </View>
+                
+                <View style={styles.methodTextWrap}>
+                   <View style={styles.methodTitleRow}>
+                      <Text style={[styles.methodTitle, { color: colors.foreground }]}>{method.title}</Text>
+                      {method.badge && (
+                        <View style={[styles.recBadge, { backgroundColor: colors.successLight }]}>
+                           <Text style={[styles.recBadgeText, { color: colors.success }]}>{method.badge}</Text>
+                        </View>
+                      )}
+                   </View>
+                   <Text style={[styles.methodSubtitle, { color: colors.mutedForeground }]}>{method.subtitle}</Text>
+                </View>
+
+                <View style={styles.methodLogoWrap}>
+                  {method.type === "visa" && <Image source={require("@/assets/images/icon.png")} style={styles.methodLogo} resizeMode="contain" />}
+                  {method.type === "apple" && <MaterialCommunityIcons name="apple" size={24} color="#000000" />}
+                  {method.type === "cash" && <MaterialCommunityIcons name="cash" size={24} color={colors.success} />}
+                  {method.type === "tamara" && <View style={[styles.tamaraLogo, { backgroundColor: "#FB923C" }]}><Text style={styles.tamaraText}>tamara</Text></View>}
                 </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <View style={styles.privacyRow}>
-          <Feather name="lock" size={14} color={colors.success} />
-          <Text style={[styles.privacyText, { color: colors.mutedForeground }]}>بياناتك آمنة ولن يتم حفظها</Text>
+        <View style={styles.securityRow}>
+           <Feather name="lock" size={14} color={colors.mutedForeground} />
+           <Text style={[styles.securityText, { color: colors.mutedForeground }]}>بياناتك آمنة ولن يتم حفظها</Text>
         </View>
 
-        <SectionHeader title="ملخص الطلب" />
-        
-        <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* Order Summary */}
+        <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.summaryHeader, { color: colors.foreground }]}>ملخص الطلب</Text>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>150 ر.س</Text>
-            <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>تنظيف منزل (3 غرف)</Text>
+             <Text style={[styles.summaryValue, { color: colors.foreground }]}>150 ر.س</Text>
+             <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>تنظيف منزل (3 غرف)</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>30 ر.س</Text>
-            <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>تنظيف إضافي: المطبخ</Text>
+             <Text style={[styles.summaryValue, { color: colors.foreground }]}>30 ر.س</Text>
+             <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>تنظيف إضافي: المطبخ</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>10 ر.س</Text>
-            <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>رسوم الخدمة</Text>
+             <Text style={[styles.summaryValue, { color: colors.foreground }]}>10 ر.س</Text>
+             <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>رسوم الخدمة</Text>
           </View>
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          
+          <View style={[styles.dotDivider, { borderTopColor: colors.border }]} />
+          
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>190 ر.س</Text>
-            <Text style={[styles.summaryLabel, { color: colors.foreground }]}>المجموع الفرعي</Text>
+             <Text style={[styles.summaryValue, { color: colors.foreground }]}>190 ر.س</Text>
+             <Text style={[styles.summaryLabel, { color: colors.foreground }]}>المجموع الفرعي</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryValue, { color: colors.foreground }]}>28.50 ر.س</Text>
-            <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>ضريبة القيمة المضافة (15%)</Text>
+             <Text style={[styles.summaryValue, { color: colors.foreground }]}>28.50 ر.س</Text>
+             <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>ضريبة القيمة المضافة (15%)</Text>
           </View>
-          <View style={[styles.finalTotalRow, { backgroundColor: colors.primaryLight }]}>
-            <Text style={[styles.finalTotalValue, { color: colors.primaryDark }]}>218.50 ر.س</Text>
-            <Text style={[styles.finalTotalLabel, { color: colors.primaryDark }]}>الإجمالي الكلي</Text>
+          
+          <View style={[styles.totalRow, { backgroundColor: colors.primaryLight + "30" }]}>
+             <Text style={[styles.totalValue, { color: colors.primary }]}>218.50 ر.س</Text>
+             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي الكلي</Text>
           </View>
         </View>
 
+        {/* Feature Icons */}
+        <View style={styles.featuresRow}>
+           <View style={styles.featureItem}>
+              <View style={[styles.featureIcon, { backgroundColor: colors.secondary }]}>
+                 <Feather name="headphones" size={16} color={colors.foreground} />
+              </View>
+              <Text style={[styles.featureText, { color: colors.mutedForeground }]}>دعم على مدار الساعة</Text>
+           </View>
+           <View style={styles.featureItem}>
+              <View style={[styles.featureIcon, { backgroundColor: colors.secondary }]}>
+                 <Feather name="shield" size={16} color={colors.foreground} />
+              </View>
+              <Text style={[styles.featureText, { color: colors.mutedForeground }]}>دفع آمن 100%</Text>
+           </View>
+           <View style={styles.featureItem}>
+              <View style={[styles.featureIcon, { backgroundColor: colors.secondary }]}>
+                 <Feather name="refresh-ccw" size={16} color={colors.foreground} />
+              </View>
+              <Text style={[styles.featureText, { color: colors.mutedForeground }]}>إلغاء سهل وسريع</Text>
+           </View>
+        </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/(tabs)")}>
+      {/* Sticky Bottom Bar */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => router.replace("/(tabs)")}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[colors.accent, colors.accentDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.confirmGradient}
+            style={styles.confirmBtn}
           >
-            <View style={styles.confirmArrowContainer}>
-              <Feather name="arrow-left" size={20} color={colors.primary} />
-            </View>
+            <Feather name="chevron-left" size={20} color="#FFFFFF" />
             <View style={styles.confirmTextContainer}>
               <Text style={styles.confirmTitle}>تأكيد الدفع</Text>
+              <Text style={styles.confirmSubtitle}>218.50 ر.س | الإجمالي</Text>
             </View>
-            <Text style={styles.confirmPrice}>218.50 ر.س</Text>
           </LinearGradient>
         </TouchableOpacity>
-        
-        <View style={styles.trustRow}>
-          <Text style={[styles.trustText, { color: colors.mutedForeground }]}>إلغاء سهل وسريع</Text>
-          <Text style={[styles.trustDot, { color: colors.mutedForeground }]}>•</Text>
-          <Text style={[styles.trustText, { color: colors.mutedForeground }]}>دفع آمن 100%</Text>
-          <Text style={[styles.trustDot, { color: colors.mutedForeground }]}>•</Text>
-          <Text style={[styles.trustText, { color: colors.mutedForeground }]}>دعم على مدار الساعة</Text>
-        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  safeBadge: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+  },
+  safeBadgeText: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 11,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  headerTextContainer: {
+  headerTitleContainer: {
     alignItems: "center",
   },
   headerTitle: {
@@ -200,37 +235,24 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_400Regular",
     fontSize: 13,
   },
-  safeBadge: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    gap: 4,
-  },
-  safeBadgeText: {
-    fontFamily: "Cairo_600SemiBold",
-    fontSize: 12,
-  },
-  scrollContent: {
+  totalWrap: {
     paddingHorizontal: 24,
-    paddingBottom: 160,
+    marginBottom: 32,
   },
   totalCard: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
+    borderRadius: 32,
     padding: 24,
-    borderRadius: 24,
-    marginBottom: 32,
+    flexDirection: "row",
+    alignItems: "center",
   },
   walletImage: {
     width: 80,
     height: 80,
-    marginLeft: 20,
+    marginRight: 16,
   },
-  totalTextContainer: {
+  totalContent: {
     flex: 1,
-    alignItems: "flex-end", // RTL
+    alignItems: "flex-end",
   },
   totalLabel: {
     fontFamily: "Cairo_600SemiBold",
@@ -242,56 +264,67 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginBottom: 8,
   },
-  encryptionRow: {
-    flexDirection: "row-reverse", // RTL
+  lockRow: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: 6,
   },
-  encryptionText: {
+  lockText: {
     fontFamily: "Cairo_500Medium",
     fontSize: 11,
   },
+  sectionTitle: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
+  },
   methodsContainer: {
+    paddingHorizontal: 24,
     gap: 12,
     marginBottom: 16,
   },
-  methodRow: {
+  methodItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     borderRadius: 20,
-    borderWidth: 1,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   radioContainer: {
-    paddingRight: 16,
+    marginRight: 16,
   },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
+  radioActive: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  radioInactive: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  methodInfo: {
+  methodTextWrap: {
     flex: 1,
-    alignItems: "flex-end", // RTL
-    marginRight: 16,
+    alignItems: "flex-end",
+    marginHorizontal: 16,
   },
   methodTitleRow: {
-    flexDirection: "row-reverse", // RTL
+    flexDirection: "row-reverse",
     alignItems: "center",
-    marginBottom: 4,
     gap: 8,
+    marginBottom: 4,
   },
   methodTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 16,
+    fontSize: 15,
   },
   recBadge: {
     paddingHorizontal: 8,
@@ -306,42 +339,58 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_400Regular",
     fontSize: 12,
   },
-  methodLogo: {
+  methodLogoWrap: {
     width: 48,
-    height: 32,
-    borderRadius: 8,
     alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
+  },
+  methodLogo: {
+    width: 32,
+    height: 32,
   },
   tamaraLogo: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  privacyRow: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
+  tamaraText: {
+    color: "#FFFFFF",
+    fontFamily: "Cairo_700Bold",
+    fontSize: 9,
+  },
+  securityRow: {
+    flexDirection: "row-reverse",
     justifyContent: "center",
+    alignItems: "center",
     gap: 6,
     marginBottom: 32,
   },
-  privacyText: {
+  securityText: {
     fontFamily: "Cairo_500Medium",
     fontSize: 12,
   },
   summaryCard: {
+    marginHorizontal: 24,
     borderRadius: 24,
-    borderWidth: 1,
     overflow: "hidden",
+    marginBottom: 32,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  summaryHeader: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 16,
+    padding: 20,
+    paddingBottom: 12,
+    textAlign: "right",
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   summaryLabel: {
     fontFamily: "Cairo_500Medium",
@@ -351,84 +400,81 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_600SemiBold",
     fontSize: 14,
   },
-  divider: {
-    height: 1,
+  dotDivider: {
+    borderTopWidth: 1,
+    borderStyle: "dashed",
     marginHorizontal: 20,
-    marginVertical: 4,
+    marginVertical: 12,
   },
-  finalTotalRow: {
+  totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 20,
+    marginTop: 8,
   },
-  finalTotalLabel: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 16,
-  },
-  finalTotalValue: {
+  totalValue: {
     fontFamily: "Cairo_700Bold",
     fontSize: 18,
+  },
+  featuresRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-around",
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  featureItem: {
+    alignItems: "center",
+    gap: 8,
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featureText: {
+    fontFamily: "Cairo_600SemiBold",
+    fontSize: 10,
+    textAlign: "center",
+    width: 80,
   },
   bottomBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: 16,
     paddingHorizontal: 24,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: "#000",
+    paddingTop: 16,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 10,
   },
-  confirmGradient: {
+  confirmBtn: {
+    height: 64,
+    borderRadius: 20,
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 100,
-    marginBottom: 16,
-  },
-  confirmArrowContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
+    paddingHorizontal: 20,
   },
   confirmTextContainer: {
     flex: 1,
-    alignItems: "flex-end", // RTL
+    alignItems: "flex-end",
   },
   confirmTitle: {
+    color: "#FFFFFF",
     fontFamily: "Cairo_700Bold",
     fontSize: 16,
-    color: "#FFFFFF",
   },
-  confirmPrice: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 18,
-    color: "#FFFFFF",
-    marginLeft: 16,
-  },
-  trustRow: {
-    flexDirection: "row-reverse", // RTL
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  trustText: {
+  confirmSubtitle: {
+    color: "rgba(255,255,255,0.8)",
     fontFamily: "Cairo_500Medium",
-    fontSize: 10,
-  },
-  trustDot: {
-    fontSize: 10,
+    fontSize: 12,
   },
 });

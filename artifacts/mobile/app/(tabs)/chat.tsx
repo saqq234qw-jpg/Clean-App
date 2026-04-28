@@ -1,9 +1,15 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { GradientButton } from "@/components/GradientButton";
+
+const CHATS = [
+  { id: "1", name: "أحمد علي", lastMsg: "عامل النظافة في طريقه إليك الآن", time: "10:15 ص", unread: 2, online: true, image: require("@/assets/images/user-ahmed.png") },
+  { id: "2", name: "فاطمة أحمد", lastMsg: "شكراً لتقييمك الرائع!", time: "أمس", unread: 0, online: false, image: require("@/assets/images/cleaner-fatima.png") },
+  { id: "3", name: "سارة محمد", lastMsg: "هل يمكنك تأكيد الموقع؟", time: "أمس", unread: 0, online: true, image: require("@/assets/images/cleaner-sara.png") },
+  { id: "4", name: "الدعم الفني", lastMsg: "كيف يمكننا مساعدتك اليوم؟", time: "23 مايو", unread: 0, online: false, image: require("@/assets/images/icon.png") },
+];
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
@@ -11,68 +17,127 @@ export default function ChatScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>المحادثات</Text>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>الرسائل</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>تواصل مع عمال النظافة والدعم</Text>
+        </View>
       </View>
 
-      <View style={styles.content}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
-          <Feather name="message-circle" size={48} color={colors.primary} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.listContainer}>
+          {CHATS.map((item) => (
+            <TouchableOpacity key={item.id} style={[styles.chatRow, { borderBottomColor: colors.border }]}>
+               {/* Time and Unread */}
+               <View style={styles.leftCol}>
+                  <Text style={[styles.timeText, { color: colors.mutedForeground }]}>{item.time}</Text>
+                  {item.unread > 0 && (
+                    <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+                       <Text style={styles.unreadText}>{item.unread}</Text>
+                    </View>
+                  )}
+               </View>
+
+               {/* Name and Last Message */}
+               <View style={styles.centerCol}>
+                  <Text style={[styles.userName, { color: colors.foreground }]}>{item.name}</Text>
+                  <Text style={[styles.lastMsg, { color: colors.mutedForeground }]} numberOfLines={1}>
+                     {item.lastMsg}
+                  </Text>
+               </View>
+
+               {/* Avatar */}
+               <View style={styles.avatarWrap}>
+                  <Image source={item.image} style={styles.avatar} />
+                  {item.online && <View style={[styles.onlineDot, { backgroundColor: colors.success, borderColor: colors.background }]} />}
+               </View>
+            </TouchableOpacity>
+          ))}
         </View>
-        <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد محادثات بعد</Text>
-        <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>سيظهر سجل المحادثات مع فريق الدعم وعمال النظافة هنا.</Text>
-        
-        <GradientButton 
-          title="ابدأ محادثة" 
-          onPress={() => {}} 
-          style={styles.btn}
-        />
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
-    alignItems: "center",
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
+    alignItems: "flex-end",
+  },
+  headerTitleContainer: {
+    alignItems: "flex-end",
   },
   headerTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 18,
+    fontSize: 22,
   },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingBottom: 100, // account for tab bar
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 20,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontFamily: "Cairo_500Medium",
+  headerSubtitle: {
+    fontFamily: "Cairo_400Regular",
     fontSize: 14,
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
   },
-  btn: {
-    width: "100%",
+  listContainer: {
+    paddingHorizontal: 24,
+  },
+  chatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  leftCol: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 60,
+  },
+  timeText: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  unreadBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unreadText: {
+    color: "#FFFFFF",
+    fontFamily: "Cairo_700Bold",
+    fontSize: 10,
+  },
+  centerCol: {
+    flex: 1,
+    alignItems: "flex-end",
+    marginHorizontal: 16,
+  },
+  userName: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  lastMsg: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 13,
+  },
+  avatarWrap: {
+    position: "relative",
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
   },
 });

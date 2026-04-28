@@ -2,21 +2,20 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
+import { LinearGradient } from "expo-linear-gradient";
 
 const ADDRESSES = [
-  { id: "1", title: "المنزل", address: "شارع الملك فهد، حي الروضة، الرياض", icon: "map-pin", color: "#10B981", badge: "الرئيسي" },
-  { id: "2", title: "العمل", address: "طريق التخصصي، حي العليا، الرياض", icon: "briefcase", color: "#F59E0B" },
-  { id: "3", title: "منزل العائلة", address: "شارع التحلية، المعذر الشمالي، الرياض", icon: "home", color: "#EF4444" },
+  { id: "1", title: "المنزل", address: "حي النخيل، شارع الأمير نايف، الرياض", icon: "home", color: "#16C47F", default: true },
+  { id: "2", title: "العمل", address: "مركز المملكة، طريق الملك فهد، الرياض", icon: "briefcase", color: "#2F80ED" },
 ];
 
-const SETTINGS = [
-  { id: "1", title: "طرق الدفع", subtitle: "إدارة بطاقاتك وطرق الدفع", icon: "credit-card", color: "#10B981" },
-  { id: "2", title: "سجل الطلبات", subtitle: "عرض طلباتك السابقة وحالاتها", icon: "calendar", color: "#3B82F6" },
-  { id: "3", title: "العروض والخصومات", subtitle: "تصفح أحدث العروض والخصومات", icon: "tag", color: "#EC4899" },
-  { id: "4", title: "الإعدادات", subtitle: "إدارة الحساب والتطبيق", icon: "settings", color: "#6B7280" },
-  { id: "5", title: "المساعدة والدعم", subtitle: "الأسئلة الشائعة وطرق التواصل", icon: "headphones", color: "#8B5CF6" },
+const MENU_ITEMS = [
+  { id: "1", title: "طلباتي", subtitle: "إدارة جميع حجوزاتك", icon: "shopping-bag", color: "#16C47F" },
+  { id: "2", title: "المفضلة", subtitle: "العمال المفضلين لديك", icon: "heart", color: "#EC4899" },
+  { id: "3", title: "العروض والخصومات", subtitle: "أحدث العروض الحصرية", icon: "tag", color: "#F59E0B" },
+  { id: "4", title: "الإعدادات", subtitle: "إدارة الحساب والتنبيهات", icon: "settings", color: "#6B7280" },
+  { id: "5", title: "المساعدة والدعم", subtitle: "تواصل معنا في أي وقت", icon: "headphones", color: "#16C47F" },
 ];
 
 export default function ProfileScreen() {
@@ -25,108 +24,139 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Feather name="settings" size={24} color={colors.foreground} />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>ملفي الشخصي</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>إدارة معلوماتك وخدماتك</Text>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerActions}>
+           <TouchableOpacity style={styles.iconCircle}>
+             <Feather name="settings" size={20} color={colors.foreground} />
+           </TouchableOpacity>
+           <TouchableOpacity style={styles.iconCircle}>
+             <Feather name="bell" size={20} color={colors.foreground} />
+             <View style={[styles.notifDot, { backgroundColor: colors.primary }]} />
+           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.iconButton}>
-          <View style={styles.badgeContainer}>
-            <Feather name="bell" size={24} color={colors.foreground} />
-            <View style={[styles.redDot, { backgroundColor: colors.danger, borderColor: colors.background }]} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>الملف الشخصي</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>إدارة حسابك وطلباتك</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.userInfo}>
-            <View style={styles.userNameRow}>
-              <Text style={[styles.userName, { color: colors.foreground }]}>أحمد محمد</Text>
-              <MaterialCommunityIcons name="check-decagram" size={18} color={colors.primary} />
-            </View>
-            <Text style={[styles.userContact, { color: colors.mutedForeground }]}>+966 50 123 4567</Text>
-            <Text style={[styles.userContact, { color: colors.mutedForeground }]}>ahmed.m@example.com</Text>
-            <TouchableOpacity style={[styles.editProfileBtn, { backgroundColor: colors.secondary }]}>
-              <Feather name="edit-2" size={12} color={colors.foreground} />
-              <Text style={[styles.editProfileText, { color: colors.foreground }]}>تعديل الملف الشخصي</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
+          <LinearGradient
+            colors={[colors.primaryLight + "40", "transparent"]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.profileTop}>
+            <TouchableOpacity style={styles.chevron}>
+              <Feather name="chevron-left" size={24} color={colors.mutedForeground} />
             </TouchableOpacity>
-          </View>
-          <View style={styles.avatarContainer}>
-            <Image source={require("@/assets/images/user-ahmed.png")} style={styles.avatar} />
-            <View style={[styles.cameraBtn, { backgroundColor: colors.primary, borderColor: colors.card }]}>
-              <Feather name="camera" size={12} color="#FFFFFF" />
+            
+            <View style={styles.profileInfo}>
+               <Text style={[styles.userName, { color: colors.foreground }]}>أحمد محمد</Text>
+               <Text style={[styles.userContact, { color: colors.mutedForeground }]}>+966 50 123 4567</Text>
+               <Text style={[styles.userContact, { color: colors.mutedForeground }]}>ahmed@email.com</Text>
+               
+               <View style={[styles.premiumPill, { backgroundColor: colors.successLight }]}>
+                  <MaterialCommunityIcons name="diamond-stone" size={14} color={colors.success} />
+                  <Text style={[styles.premiumText, { color: colors.success }]}>عضو مميز | لديك 240 نقطة</Text>
+               </View>
+            </View>
+
+            <View style={styles.avatarWrap}>
+              <Image source={require("@/assets/images/user-ahmed.png")} style={styles.avatar} />
+              <TouchableOpacity style={[styles.cameraBadge, { backgroundColor: colors.primary }]}>
+                <Feather name="camera" size={12} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        <LinearGradient
-          colors={["#8B5CF6", "#6366F1"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.premiumBanner}
-        >
-          <View style={styles.premiumContent}>
-            <View style={styles.premiumHeader}>
-              <Text style={styles.premiumTitle}>عضوية مميزة</Text>
-              <MaterialCommunityIcons name="star-circle" size={20} color="#FDE047" />
-            </View>
-            <Text style={styles.premiumSubtitle}>استمتع بخصومات حصرية وأولوية في الحجز</Text>
-          </View>
-          <TouchableOpacity style={styles.premiumBtn}>
-            <Text style={[styles.premiumBtnText, { color: "#6366F1" }]}>عرض المميزات</Text>
+        {/* Saved Addresses */}
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>عرض الكل</Text>
           </TouchableOpacity>
-        </LinearGradient>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>العناوين المحفوظة</Text>
+        </View>
 
-        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionLink, { color: colors.primary }]}>عرض الكل ▾</Text>
-            <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>العناوين المحفوظة</Text>
-              <Feather name="map-pin" size={18} color={colors.foreground} />
-            </View>
-          </View>
-          
-          {ADDRESSES.map((address, idx) => (
-            <View key={address.id} style={[styles.addressRow, idx !== ADDRESSES.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-              <TouchableOpacity style={styles.menuBtn}>
+        <View style={styles.sectionContent}>
+          {ADDRESSES.map((item) => (
+            <View key={item.id} style={[styles.addressItem, { backgroundColor: colors.card }]}>
+              <TouchableOpacity>
                 <Feather name="more-vertical" size={20} color={colors.mutedForeground} />
               </TouchableOpacity>
-              <View style={styles.addressInfo}>
-                <View style={styles.addressTitleRow}>
-                  <Text style={[styles.addressTitle, { color: colors.foreground }]}>{address.title}</Text>
-                  {address.badge && (
-                    <View style={[styles.addressBadge, { backgroundColor: colors.successLight }]}>
-                      <Text style={[styles.addressBadgeText, { color: colors.success }]}>{address.badge}</Text>
+              <View style={styles.itemTextWrap}>
+                <View style={styles.itemTitleRow}>
+                  {item.default && (
+                    <View style={[styles.defaultBadge, { backgroundColor: colors.successLight }]}>
+                      <Text style={[styles.defaultBadgeText, { color: colors.success }]}>افتراضي</Text>
                     </View>
                   )}
+                  <Text style={[styles.itemTitle, { color: colors.foreground }]}>{item.title}</Text>
                 </View>
-                <Text style={[styles.addressText, { color: colors.mutedForeground }]}>{address.address}</Text>
+                <Text style={[styles.itemSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  {item.address}
+                </Text>
               </View>
-              <View style={[styles.addressIcon, { backgroundColor: address.color + "1A" }]}>
-                <Feather name={address.icon as any} size={20} color={address.color} />
+              <View style={[styles.itemIconBox, { backgroundColor: item.color + "20" }]}>
+                 <Feather name={item.icon as any} size={20} color={item.color} />
               </View>
             </View>
           ))}
-          
-          <TouchableOpacity style={[styles.addAddressBtn, { borderColor: colors.primary, borderStyle: "dashed" }]}>
-            <Text style={[styles.addAddressText, { color: colors.primary }]}>+ إضافة عنوان جديد</Text>
+          <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]}>
+             <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة عنوان جديد</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionCard, { backgroundColor: colors.card, marginBottom: 100 }]}>
-          {SETTINGS.map((item, idx) => (
-            <TouchableOpacity key={item.id} style={[styles.settingRow, idx !== SETTINGS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+        {/* Payment Methods */}
+        <View style={styles.sectionHeader}>
+          <TouchableOpacity>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>عرض الكل</Text>
+          </TouchableOpacity>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>وسائل الدفع</Text>
+        </View>
+
+        <View style={styles.sectionContent}>
+          <View style={[styles.addressItem, { backgroundColor: colors.card }]}>
+            <TouchableOpacity>
+              <Feather name="more-vertical" size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <View style={styles.itemTextWrap}>
+               <View style={styles.itemTitleRow}>
+                 <View style={[styles.defaultBadge, { backgroundColor: colors.successLight }]}>
+                   <Text style={[styles.defaultBadgeText, { color: colors.success }]}>افتراضي</Text>
+                 </View>
+                 <Text style={[styles.itemTitle, { color: colors.foreground }]}>visa **** 4242</Text>
+               </View>
+            </View>
+            <View style={styles.paymentLogoWrap}>
+               <MaterialCommunityIcons name="credit-card" size={24} color={colors.accent} />
+            </View>
+          </View>
+          <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]}>
+             <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة وسيلة دفع جديدة</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Menu List */}
+        <View style={[styles.menuContainer, { backgroundColor: colors.card }]}>
+          {MENU_ITEMS.map((item, index) => (
+            <TouchableOpacity 
+              key={item.id} 
+              style={[
+                styles.menuItem, 
+                index !== MENU_ITEMS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
+              ]}
+            >
               <Feather name="chevron-left" size={20} color={colors.mutedForeground} />
-              <View style={styles.settingInfo}>
-                <Text style={[styles.settingTitle, { color: colors.foreground }]}>{item.title}</Text>
-                <Text style={[styles.settingSubtitle, { color: colors.mutedForeground }]}>{item.subtitle}</Text>
+              <View style={styles.menuTextWrap}>
+                <Text style={[styles.menuTitle, { color: colors.foreground }]}>{item.title}</Text>
+                <Text style={[styles.menuSubtitle, { color: colors.mutedForeground }]}>{item.subtitle}</Text>
               </View>
-              <View style={[styles.settingIcon, { backgroundColor: item.color + "1A" }]}>
-                <Feather name={item.icon as any} size={20} color={item.color} />
+              <View style={[styles.menuIconBox, { backgroundColor: item.color + "20" }]}>
+                 <Feather name={item.icon as any} size={20} color={item.color} />
               </View>
             </TouchableOpacity>
           ))}
@@ -137,37 +167,43 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  badgeContainer: {
-    position: "relative",
-  },
-  redDot: {
+  notifDot: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    top: 12,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
-  headerTextContainer: {
-    alignItems: "center",
+  headerTitleContainer: {
+    alignItems: "flex-end",
   },
   headerTitle: {
     fontFamily: "Cairo_700Bold",
@@ -177,51 +213,54 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_400Regular",
     fontSize: 13,
   },
-  scrollContent: {
-    paddingHorizontal: 24,
+  profileCard: {
+    marginHorizontal: 24,
+    borderRadius: 32,
+    padding: 24,
+    marginBottom: 32,
+    overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 4,
   },
-  userCard: {
+  profileTop: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    marginBottom: 16,
   },
-  userInfo: {
+  chevron: {
+    padding: 4,
+  },
+  profileInfo: {
     flex: 1,
-    alignItems: "flex-end", // RTL
-    marginRight: 16,
-  },
-  userNameRow: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 6,
+    alignItems: "flex-end",
+    marginHorizontal: 16,
   },
   userName: {
     fontFamily: "Cairo_700Bold",
     fontSize: 20,
+    marginBottom: 4,
   },
   userContact: {
     fontFamily: "Cairo_500Medium",
     fontSize: 13,
     marginBottom: 2,
   },
-  editProfileBtn: {
-    flexDirection: "row-reverse", // RTL
+  premiumPill: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    marginTop: 8,
     gap: 6,
+    marginTop: 12,
   },
-  editProfileText: {
+  premiumText: {
     fontFamily: "Cairo_600SemiBold",
     fontSize: 11,
   },
-  avatarContainer: {
+  avatarWrap: {
     position: "relative",
   },
   avatar: {
@@ -229,164 +268,137 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
   },
-  cameraBtn: {
+  cameraBadge: {
     position: "absolute",
     bottom: 0,
-    left: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
+    borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
-  premiumBanner: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
-    padding: 20,
-    borderRadius: 24,
-    marginBottom: 24,
-  },
-  premiumContent: {
-    flex: 1,
-    alignItems: "flex-end", // RTL
-    marginLeft: 16,
-  },
-  premiumHeader: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 6,
-  },
-  premiumTitle: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 18,
-    color: "#FFFFFF",
-  },
-  premiumSubtitle: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 12,
-    color: "#E0E7FF",
-    textAlign: "right",
-  },
-  premiumBtn: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 100,
-  },
-  premiumBtnText: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 12,
-  },
-  sectionCard: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 4,
-  },
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  sectionTitleRow: {
-    flexDirection: "row-reverse", // RTL
     alignItems: "center",
-    gap: 8,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontFamily: "Cairo_700Bold",
     fontSize: 18,
   },
-  sectionLink: {
+  seeAll: {
     fontFamily: "Cairo_600SemiBold",
-    fontSize: 13,
+    fontSize: 14,
   },
-  addressRow: {
+  sectionContent: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+    gap: 12,
+  },
+  addressItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  menuBtn: {
-    padding: 8,
-  },
-  addressInfo: {
+  itemTextWrap: {
     flex: 1,
-    alignItems: "flex-end", // RTL
-    marginRight: 16,
+    alignItems: "flex-end",
+    marginHorizontal: 16,
   },
-  addressTitleRow: {
-    flexDirection: "row-reverse", // RTL
+  itemTitleRow: {
+    flexDirection: "row-reverse",
     alignItems: "center",
-    marginBottom: 4,
     gap: 8,
+    marginBottom: 4,
   },
-  addressTitle: {
+  itemTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 16,
+    fontSize: 15,
   },
-  addressBadge: {
+  defaultBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 100,
   },
-  addressBadgeText: {
+  defaultBadgeText: {
     fontFamily: "Cairo_600SemiBold",
     fontSize: 10,
   },
-  addressText: {
+  itemSubtitle: {
     fontFamily: "Cairo_400Regular",
     fontSize: 13,
-    textAlign: "right",
   },
-  addressIcon: {
+  itemIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  addAddressBtn: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 12,
+  paymentLogoWrap: {
+    width: 48,
+    height: 32,
     alignItems: "center",
-    marginTop: 16,
+    justifyContent: "center",
   },
-  addAddressText: {
+  addBtn: {
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  addBtnText: {
     fontFamily: "Cairo_600SemiBold",
     fontSize: 14,
   },
-  settingRow: {
+  menuContainer: {
+    marginHorizontal: 24,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    marginBottom: 40,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: 20,
   },
-  settingInfo: {
+  menuTextWrap: {
     flex: 1,
-    alignItems: "flex-end", // RTL
-    marginRight: 16,
+    alignItems: "flex-end",
+    marginHorizontal: 16,
   },
-  settingTitle: {
+  menuTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 4,
   },
-  settingSubtitle: {
+  menuSubtitle: {
     fontFamily: "Cairo_400Regular",
-    fontSize: 13,
-    textAlign: "right",
+    fontSize: 12,
   },
-  settingIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  menuIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -6,211 +6,172 @@ import { router } from "expo-router";
 import AppMap from "@/components/AppMap";
 import { useColors } from "@/hooks/useColors";
 
-const TIMELINE = [
-  { id: "1", title: "تم الوصول", active: false, done: false },
-  { id: "2", title: "في الطريق", active: true, done: false, icon: "car" },
-  { id: "3", title: "جاري التجهيز", active: true, done: true },
-  { id: "4", title: "تم التأكيد", active: true, done: true, icon: "check" },
-];
-
 export default function TrackingScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Feather name="headphones" size={24} color={colors.foreground} />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity style={styles.iconCircle}>
+          <Feather name="more-horizontal" size={18} color={colors.foreground} />
         </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
+        <View style={styles.headerTitleContainer}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>جاري الوصول إليك</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>عامل النظافة في طريقه إليك الآن</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>سيصل عامل النظافة خلال</Text>
         </View>
-        <View style={styles.rightActions}>
-          <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.danger + "1A" }]}>
-            <Text style={[styles.cancelBtnText, { color: colors.danger }]}>إلغاء الطلب</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-            <Feather name="chevron-right" size={24} color={colors.foreground} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.iconCircle} onPress={() => router.back()}>
+          <Feather name="chevron-down" size={24} color={colors.foreground} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.infoRow, { backgroundColor: colors.secondary }]}>
-          <View style={styles.infoItem}>
-            <Feather name="clock" size={16} color={colors.mutedForeground} />
-            <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>الموعد اليوم</Text>
-            <Text style={[styles.infoValue, { color: colors.foreground }]}>04:00 م - 06:00 م</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        {/* ETA Card */}
+        <View style={styles.etaRow}>
+          <View style={[styles.etaHalf, { backgroundColor: colors.accentLight }]}>
+             <Text style={[styles.etaSmall, { color: colors.accent }]}>المسافة المتبقية</Text>
+             <Text style={[styles.etaLarge, { color: colors.accent }]}>2.4 كم</Text>
           </View>
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <View style={styles.infoItem}>
-            <Feather name="copy" size={16} color={colors.mutedForeground} />
-            <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>رقم الحجز</Text>
-            <Text style={[styles.infoValue, { color: colors.foreground }]}># 10245</Text>
+          <View style={[styles.etaHalf, { backgroundColor: colors.successLight }]}>
+             <Text style={[styles.etaSmall, { color: colors.success }]}>وقت الوصول المتوقع</Text>
+             <Text style={[styles.etaLarge, { color: colors.success }]}>12 دقيقة</Text>
           </View>
         </View>
 
-        <View style={[styles.mapCard, { backgroundColor: colors.border }]}>
-          <AppMap
-            style={StyleSheet.absoluteFill}
-            region={{
-              latitude: 24.7136,
-              longitude: 46.6753,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
-            }}
-            polyline={{
-              coordinates: [
-                { latitude: 24.70, longitude: 46.65 },
-                { latitude: 24.71, longitude: 46.66 },
-                { latitude: 24.72, longitude: 46.68 },
-                { latitude: 24.73, longitude: 46.69 },
-              ],
-              color: colors.success,
-              width: 4,
-            }}
-            markers={[
-              { id: "home", coordinate: { latitude: 24.73, longitude: 46.69 }, color: colors.success },
-              { id: "car", coordinate: { latitude: 24.70, longitude: 46.65 }, color: colors.primary },
-            ]}
-            scrollEnabled={false}
-            zoomEnabled={false}
-          />
-          <View pointerEvents="none" style={styles.mapHomeOverlay}>
-            <View style={[styles.mapHomeIcon, { backgroundColor: colors.success }]}>
-              <Feather name="home" size={18} color="#FFFFFF" />
+        {/* Map View */}
+        <View style={styles.mapSection}>
+          <View style={styles.mapContainer}>
+            <AppMap
+              style={StyleSheet.absoluteFill}
+              region={{
+                latitude: 24.7136,
+                longitude: 46.6753,
+                latitudeDelta: 0.04,
+                longitudeDelta: 0.04,
+              }}
+              polyline={{
+                coordinates: [
+                  { latitude: 24.7000, longitude: 46.6500 },
+                  { latitude: 24.7136, longitude: 46.6753 },
+                ],
+                color: colors.accent,
+                width: 4,
+              }}
+            />
+            
+            {/* Cleaner Pin */}
+            <View style={[styles.cleanerPin, { top: "40%", right: "50%" }]}>
+              <View style={styles.chatBubble}>
+                <Text style={styles.chatBubbleText}>عامل النظافة في طريقه إليك</Text>
+              </View>
+              <View style={[styles.pinTail, { borderTopColor: colors.primary }]} />
+              <Image source={require("@/assets/images/user-ahmed.png")} style={styles.pinAvatar} />
+            </View>
+
+            {/* Home Pin */}
+            <View style={[styles.homePin, { bottom: "20%", left: "20%" }]}>
+              <View style={[styles.homePinCircle, { backgroundColor: colors.success }]}>
+                <Feather name="home" size={16} color="#FFFFFF" />
+              </View>
+            </View>
+
+            <View style={styles.floatingActions}>
+              <TouchableOpacity style={[styles.floatBtn, { backgroundColor: colors.card }]}>
+                <MaterialCommunityIcons name="shield-check" size={20} color={colors.success} />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.floatBtn, { backgroundColor: colors.card }]}>
+                <MaterialCommunityIcons name="crosshairs-gps" size={20} color={colors.foreground} />
+              </TouchableOpacity>
             </View>
           </View>
-          <View pointerEvents="none" style={styles.mapCarOverlay}>
-            <View style={[styles.mapCarIcon, { backgroundColor: "#FFFFFF" }]}>
-              <MaterialCommunityIcons name="car" size={20} color={colors.primary} />
-            </View>
-          </View>
-
-          <View style={styles.etaCard}>
-            <Text style={[styles.etaLabel, { color: colors.mutedForeground }]}>الوقت المتوقع للوصول</Text>
-            <Text style={[styles.etaValue, { color: colors.success }]}>12 دقيقة</Text>
-          </View>
-
-          <TouchableOpacity style={[styles.gpsButton, { backgroundColor: colors.card }]}>
-            <MaterialCommunityIcons name="crosshairs-gps" size={20} color={colors.foreground} />
-          </TouchableOpacity>
         </View>
 
-        <View style={[styles.cleanerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.cleanerHeader}>
+        {/* Cleaner Profile Card */}
+        <View style={[styles.cleanerProfile, { backgroundColor: colors.card }]}>
+          <View style={styles.cleanerMain}>
             <View style={styles.cleanerInfo}>
-              <View style={styles.cleanerNameRow}>
-                <Text style={[styles.cleanerName, { color: colors.foreground }]}>أسماء محمد</Text>
-                <View style={[styles.ratingBadge, { backgroundColor: colors.warning + "1A" }]}>
-                  <Text style={[styles.ratingText, { color: colors.warning }]}>4.8</Text>
-                  <Feather name="star" size={10} color={colors.warning} />
-                </View>
-              </View>
-              <View style={styles.cleanerTags}>
-                <View style={[styles.tag, { backgroundColor: colors.successLight }]}>
-                  <Text style={[styles.tagText, { color: colors.success }]}>الأكثر تقييماً</Text>
-                </View>
-                <Text style={[styles.expText, { color: colors.mutedForeground }]}>خبرة 3 سنوات في التنظيف</Text>
-              </View>
+               <View style={styles.nameRow}>
+                  <Text style={[styles.cleanerName, { color: colors.foreground }]}>أحمد علي</Text>
+                  <View style={[styles.znBadge, { backgroundColor: colors.primary }]}>
+                     <Text style={styles.znText}>ZN</Text>
+                  </View>
+               </View>
+               <Text style={[styles.cleanerTitle, { color: colors.mutedForeground }]}>عامل نظافة محترف</Text>
+               <View style={[styles.expPill, { backgroundColor: colors.successLight }]}>
+                  <Text style={[styles.expText, { color: colors.success }]}>خبرة 5 سنوات</Text>
+               </View>
             </View>
-            <Image source={require("@/assets/images/cleaner-fatima.png")} style={styles.cleanerAvatar} />
+            <Image source={require("@/assets/images/user-ahmed.png")} style={styles.cleanerAvatarMain} />
           </View>
-          
-          <View style={[styles.carInfoPill, { backgroundColor: colors.successLight }]}>
-            <MaterialCommunityIcons name="car" size={16} color={colors.success} />
-            <Text style={[styles.carInfoText, { color: colors.success }]}>تويوتا يارس - أبيض</Text>
-            <View style={styles.plateContainer}>
-              <Text style={[styles.plateText, { color: colors.success }]}>أ ب د 1234</Text>
-            </View>
+
+          <View style={[styles.carInfo, { backgroundColor: colors.secondary }]}>
+            <Text style={[styles.carPlate, { color: colors.foreground }]}>أ ب ج 1234 السعودية</Text>
+            <View style={styles.carStatDivider} />
+            <Text style={[styles.carModel, { color: colors.foreground }]}>تويوتا هايلكس | 2020</Text>
           </View>
-          
+
           <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.successLight }]} onPress={() => router.push("/rating")}>
-              <MaterialCommunityIcons name="chat-outline" size={18} color={colors.success} />
-              <Text style={[styles.actionBtnText, { color: colors.success }]}>الدردشة</Text>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.secondary }]}>
+              <Feather name="share-2" size={20} color={colors.foreground} />
+              <Text style={[styles.actionBtnText, { color: colors.foreground }]}>مشاركة الموقع</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.successLight }]}>
-              <Feather name="phone-call" size={18} color={colors.success} />
-              <Text style={[styles.actionBtnText, { color: colors.success }]}>اتصال</Text>
+            
+            <TouchableOpacity style={[styles.callBtn, { backgroundColor: colors.primary }]}>
+               <Feather name="phone" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.successLight }]}>
-              <Feather name="share-2" size={18} color={colors.success} />
-              <Text style={[styles.actionBtnText, { color: colors.success }]}>مشاركة الرحلة</Text>
+
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.secondary }]}>
+              <Feather name="message-circle" size={20} color={colors.foreground} />
+              <Text style={[styles.actionBtnText, { color: colors.foreground }]}>دردشة</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={[styles.safetyCard, { backgroundColor: colors.secondary }]}>
-          <View style={styles.safetyIconContainer}>
-            <MaterialCommunityIcons name="shield-check" size={24} color={colors.primary} />
-          </View>
-          <View style={styles.safetyTextContainer}>
-            <Text style={[styles.safetyTitle, { color: colors.foreground }]}>سلامتك تهمنا</Text>
-            <Text style={[styles.safetyDesc, { color: colors.mutedForeground }]}>يمكنك مشاركة موقعك مع أحد افراد عائلتك</Text>
-          </View>
-          <TouchableOpacity style={[styles.safetyBtn, { backgroundColor: colors.card }]}>
-            <Text style={[styles.safetyBtnText, { color: colors.primary }]}>مشاركة الموقع</Text>
-          </TouchableOpacity>
+        {/* Service Summary Item */}
+        <View style={[styles.serviceItem, { backgroundColor: colors.card }]}>
+           <View style={styles.serviceTextWrap}>
+              <Text style={[styles.serviceType, { color: colors.foreground }]}>خدمة تنظيف عميق</Text>
+              <Text style={[styles.serviceTime, { color: colors.mutedForeground }]}>اليوم، 10:00 ص - 12:00 م</Text>
+           </View>
+           <View style={[styles.serviceIcon, { backgroundColor: colors.successLight }]}>
+              <MaterialCommunityIcons name="broom" size={24} color={colors.success} />
+           </View>
         </View>
 
+        {/* Cancel Button */}
+        <TouchableOpacity style={styles.cancelRow}>
+          <Text style={[styles.cancelText, { color: colors.danger }]}>إلغاء الطلب</Text>
+        </TouchableOpacity>
       </ScrollView>
-      
-      <View style={[styles.timelineContainer, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.timelineTrack}>
-          {TIMELINE.map((step, idx) => (
-            <React.Fragment key={step.id}>
-              <View style={styles.timelineStep}>
-                <View style={[
-                  styles.timelineDot,
-                  { backgroundColor: step.active ? colors.success : colors.border },
-                  !step.active && { borderWidth: 2, borderColor: colors.mutedForeground, backgroundColor: colors.card }
-                ]}>
-                  {step.icon && step.active && (
-                    <MaterialCommunityIcons name={step.icon as any} size={12} color="#FFFFFF" />
-                  )}
-                </View>
-                <Text style={[
-                  styles.timelineTitle,
-                  { color: step.active ? colors.foreground : colors.mutedForeground }
-                ]}>{step.title}</Text>
-              </View>
-              {idx < TIMELINE.length - 1 && (
-                <View style={[
-                  styles.timelineLine,
-                  { backgroundColor: TIMELINE[idx + 1].active ? colors.success : colors.border }
-                ]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  headerTextContainer: {
-    alignItems: "center",
+  headerTitleContainer: {
+    alignItems: "flex-end",
   },
   headerTitle: {
     fontFamily: "Cairo_700Bold",
@@ -220,69 +181,85 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_400Regular",
     fontSize: 13,
   },
-  rightActions: {
+  etaRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  cancelBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-  },
-  cancelBtnText: {
-    fontFamily: "Cairo_600SemiBold",
-    fontSize: 12,
-  },
-  scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 100,
+    gap: 12,
+    marginBottom: 20,
   },
-  infoRow: {
-    flexDirection: "row-reverse", // RTL
-    borderRadius: 16,
+  etaHalf: {
+    flex: 1,
     padding: 16,
-    marginBottom: 16,
+    borderRadius: 20,
+    alignItems: "flex-end",
   },
-  infoItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-  },
-  infoLabel: {
+  etaSmall: {
     fontFamily: "Cairo_500Medium",
-    fontSize: 12,
+    fontSize: 11,
+    marginBottom: 4,
   },
-  infoValue: {
+  etaLarge: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 14,
+    fontSize: 20,
   },
-  divider: {
-    width: 1,
-    marginHorizontal: 16,
+  mapSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
-  mapCard: {
-    height: 240,
-    borderRadius: 24,
+  mapContainer: {
+    height: 400,
+    borderRadius: 32,
     overflow: "hidden",
-    marginBottom: 16,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 4,
   },
-  mapPlaceholder: {
-    flex: 1,
+  cleanerPin: {
+    position: "absolute",
     alignItems: "center",
-    justifyContent: "center",
   },
-  mapHomeOverlay: {
+  chatBubble: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 8,
+  },
+  chatBubbleText: {
+    fontFamily: "Cairo_600SemiBold",
+    fontSize: 11,
+  },
+  pinAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+  },
+  pinTail: {
     position: "absolute",
-    top: 40,
-    right: 30,
+    bottom: 34,
+    width: 0,
+    height: 0,
+    backgroundColor: "transparent",
+    borderStyle: "solid",
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 10,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
   },
-  mapCarOverlay: {
+  homePin: {
     position: "absolute",
-    bottom: 60,
-    left: 30,
   },
-  mapHomeIcon: {
+  homePinCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -291,240 +268,178 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#FFFFFF",
   },
-  mapCarIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  floatingActions: {
+    position: "absolute",
+    right: 16,
+    top: 100,
+    gap: 12,
+  },
+  floatBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 3,
   },
-  etaCard: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    alignItems: "center",
-  },
-  etaLabel: {
-    fontFamily: "Cairo_500Medium",
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  etaValue: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 14,
-  },
-  gpsButton: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cleanerCard: {
-    padding: 16,
+  cleanerProfile: {
+    marginHorizontal: 24,
     borderRadius: 24,
-    borderWidth: 1,
+    padding: 20,
     marginBottom: 16,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  cleanerHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end", // RTL
-    marginBottom: 16,
+  cleanerMain: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    marginBottom: 20,
   },
   cleanerInfo: {
-    alignItems: "flex-end", // RTL
-    marginRight: 16,
+    flex: 1,
+    alignItems: "flex-end",
   },
-  cleanerNameRow: {
-    flexDirection: "row-reverse", // RTL
+  nameRow: {
+    flexDirection: "row-reverse",
     alignItems: "center",
+    gap: 8,
     marginBottom: 4,
   },
   cleanerName: {
     fontFamily: "Cairo_700Bold",
     fontSize: 18,
-    marginLeft: 8,
   },
-  ratingBadge: {
-    flexDirection: "row-reverse", // RTL
+  znBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 100,
-    gap: 4,
+    justifyContent: "center",
   },
-  ratingText: {
+  znText: {
+    color: "#FFFFFF",
     fontFamily: "Cairo_700Bold",
-    fontSize: 12,
-  },
-  cleanerTags: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
-    gap: 8,
-  },
-  tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 100,
-  },
-  tagText: {
-    fontFamily: "Cairo_600SemiBold",
     fontSize: 10,
   },
-  expText: {
+  cleanerTitle: {
     fontFamily: "Cairo_500Medium",
-    fontSize: 12,
+    fontSize: 14,
+    marginBottom: 8,
   },
-  cleanerAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  carInfoPill: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "center",
+  expPill: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 8,
+    paddingVertical: 4,
+    borderRadius: 100,
   },
-  carInfoText: {
+  expText: {
     fontFamily: "Cairo_600SemiBold",
-    fontSize: 13,
-  },
-  plateContainer: {
-    backgroundColor: "rgba(255,255,255,0.5)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: "auto", // Push to left in RTL
-  },
-  plateText: {
-    fontFamily: "Cairo_700Bold",
     fontSize: 11,
   },
+  cleanerAvatarMain: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginLeft: 16,
+  },
+  carInfo: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  carPlate: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 13,
+  },
+  carStatDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: "#E5E7EB",
+  },
+  carModel: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 13,
+  },
   actionRow: {
-    flexDirection: "row-reverse", // RTL
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   actionBtn: {
     flex: 1,
-    flexDirection: "row-reverse", // RTL
+    height: 48,
+    borderRadius: 24,
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 100,
-    gap: 6,
+    gap: 8,
   },
   actionBtnText: {
     fontFamily: "Cairo_600SemiBold",
     fontSize: 12,
   },
-  safetyCard: {
-    flexDirection: "row-reverse", // RTL
+  callBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#16C47F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  serviceItem: {
+    marginHorizontal: 24,
+    flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 16,
-  },
-  safetyIconContainer: {
-    width: 40,
-    height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
-  },
-  safetyTextContainer: {
-    flex: 1,
-    alignItems: "flex-end", // RTL
-  },
-  safetyTitle: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  safetyDesc: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 11,
-    textAlign: "right",
-  },
-  safetyBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 100,
-    marginRight: 12,
-  },
-  safetyBtnText: {
-    fontFamily: "Cairo_600SemiBold",
-    fontSize: 11,
-  },
-  timelineContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
+    marginBottom: 20,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  timelineTrack: {
-    flexDirection: "row-reverse", // RTL
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
+  serviceTextWrap: {
+    flex: 1,
+    alignItems: "flex-end",
+    marginRight: 16,
   },
-  timelineStep: {
-    alignItems: "center",
-    width: 60,
+  serviceType: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 15,
+    marginBottom: 4,
   },
-  timelineDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  serviceTime: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 12,
+  },
+  serviceIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
-    zIndex: 1,
   },
-  timelineTitle: {
-    fontFamily: "Cairo_600SemiBold",
-    fontSize: 11,
-    textAlign: "center",
+  cancelRow: {
+    alignItems: "center",
+    marginTop: 10,
   },
-  timelineLine: {
-    flex: 1,
-    height: 2,
-    marginTop: 11,
-    marginHorizontal: -20,
-    zIndex: 0,
+  cancelText: {
+    fontFamily: "Cairo_700Bold",
+    fontSize: 15,
+    textDecorationLine: "underline",
   },
 });

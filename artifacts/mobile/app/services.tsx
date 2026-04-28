@@ -1,153 +1,140 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+import { LinearGradient } from "expo-linear-gradient";
+
+const CATEGORIES = [
+  { id: "all", title: "الكل", icon: "grid", active: true },
+  { id: "homes", title: "المنازل", icon: "home", active: false },
+  { id: "offices", title: "المكاتب", icon: "briefcase", active: false },
+  { id: "furniture", title: "الأثاث", icon: "package", active: false },
+  { id: "others", title: "أخرى", icon: "more-horizontal", active: false },
+];
 
 const SERVICES_GRID = [
-  {
-    id: "home",
-    title: "تنظيف المنزل",
-    desc: "تنظيف شامل لجميع أرجاء المنزل",
-    image: require("@/assets/images/illustration-sofa.png"),
-    color: "#EFF6FF",
-    btnColor: "#3B82F6",
-  },
-  {
-    id: "office",
-    title: "تنظيف المكاتب",
-    desc: "بيئة عمل نظيفة ومنظمة لإنتاجية أعلى",
-    image: require("@/assets/images/illustration-office.png"),
-    color: "#ECFDF5",
-    btnColor: "#10B981",
-  },
-  {
-    id: "deep",
-    title: "تنظيف عميق",
-    desc: "تنظيف عميق لإزالة الأوساخ المتراكمة",
-    image: require("@/assets/images/illustration-vacuum.png"),
-    color: "#EFF6FF",
-    btnColor: "#3B82F6",
-  },
-  {
-    id: "sofa",
-    title: "تنظيف الكنب",
-    desc: "إزالة البقع و الروائح لكنب نظيف ومعطر",
-    image: require("@/assets/images/illustration-armchair.png"),
-    color: "#FFF7ED",
-    btnColor: "#F59E0B",
-  },
+  { id: "1", title: "تنظيف منازل", price: "85", desc: "تنظيف دوري شامل للمنزل", image: require("@/assets/images/illustration-sofa.png"), color: "#16C47F" },
+  { id: "2", title: "تنظيف عميق", price: "150", desc: "تنظيف تفصيلي دقيق لكل الزوايا", image: require("@/assets/images/illustration-vacuum.png"), color: "#2F80ED" },
+  { id: "3", title: "تنظيف مكاتب", price: "100", desc: "بيئة عمل نظيفة ومنظمة", image: require("@/assets/images/illustration-office.png"), color: "#F59E0B" },
+  { id: "4", title: "تنظيف كنب", price: "120", desc: "إزالة البقع والروائح الكريهة", image: require("@/assets/images/illustration-armchair.png"), color: "#EC4899" },
+  { id: "5", title: "تنظيف مطابخ", price: "110", desc: "تعقيم وتنظيف الأجهزة والأسطح", image: require("@/assets/images/illustration-bucket.png"), color: "#8B5CF6" },
+  { id: "6", title: "تنظيف فلل", price: "250", desc: "خدمة متكاملة للمساحات الكبيرة", image: require("@/assets/images/illustration-sofa.png"), color: "#16C47F" },
 ];
 
 export default function ServicesScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const [activeCategory, setActiveCategory] = useState("all");
 
   return (
-    <View style={[styles.container, { backgroundColor: "#F8FAFC" }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity style={styles.iconCircle} onPress={() => router.back()}>
-          <Feather name="chevron-right" size={18} color={colors.foreground} />
+        <TouchableOpacity style={styles.iconCircle}>
+          <Feather name="headphones" size={18} color={colors.foreground} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>اختر الخدمة</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>
-            اختر الخدمة التي تناسب احتياجك
-          </Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>خدماتنا</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>اختر الخدمة التي تناسب احتياجك</Text>
         </View>
-        <TouchableOpacity style={[styles.iconCircle, { backgroundColor: "#EFF6FF" }]}>
-          <Feather name="headphones" size={16} color={colors.primary} />
+        <TouchableOpacity style={styles.iconCircle} onPress={() => router.back()}>
+          <Feather name="chevron-right" size={24} color={colors.foreground} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={["#DBEAFE", "#EFF6FF"]}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.introCard}
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        {/* Categories Scroll */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesScroll}
         >
-          <Image
-            source={require("@/assets/images/illustration-bucket.png")}
-            style={styles.introImage}
-            resizeMode="contain"
-          />
-          <View style={styles.introTextContainer}>
-            <Text style={[styles.introTitle, { color: colors.primaryDark }]}>خدمة احترافية</Text>
-            <Text style={[styles.introDesc, { color: colors.foreground }]}>
-              فريق مدرب بأعلى معايير الجودة لمنزل و مكان أنظف ✨
-            </Text>
-          </View>
-        </LinearGradient>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              onPress={() => setActiveCategory(cat.id)}
+              style={[
+                styles.categoryPill,
+                { 
+                  backgroundColor: activeCategory === cat.id ? colors.primary : colors.card,
+                  borderColor: activeCategory === cat.id ? colors.primary : colors.border
+                }
+              ]}
+            >
+              <Text style={[styles.categoryText, { color: activeCategory === cat.id ? "#FFFFFF" : colors.foreground }]}>
+                {cat.title}
+              </Text>
+              <Feather name={cat.icon as any} size={16} color={activeCategory === cat.id ? "#FFFFFF" : colors.mutedForeground} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>✨ خدمات التنظيف</Text>
-        </View>
-
+        {/* Services Grid */}
         <View style={styles.grid}>
           {SERVICES_GRID.map((service) => (
-            <TouchableOpacity
-              key={service.id}
-              style={styles.gridCard}
+            <TouchableOpacity 
+              key={service.id} 
+              style={[styles.serviceCard, { backgroundColor: colors.card }]}
               onPress={() => router.push("/booking")}
-              activeOpacity={0.9}
             >
-              <View style={[styles.arcContainer, { backgroundColor: service.color }]}>
-                <Image source={service.image} style={styles.cardImage} resizeMode="contain" />
+              <View style={[styles.categoryIndicator, { backgroundColor: service.color + "20" }]}>
+                 <View style={[styles.categoryIndicatorDot, { backgroundColor: service.color }]} />
               </View>
+              
+              <Image source={service.image} style={styles.serviceImage} resizeMode="contain" />
+              
               <View style={styles.cardContent}>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{service.title}</Text>
-                <Text style={[styles.cardDesc, { color: colors.mutedForeground }]} numberOfLines={2}>
+                <Text style={[styles.serviceTitle, { color: colors.foreground }]}>{service.title}</Text>
+                <Text style={[styles.serviceDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
                   {service.desc}
                 </Text>
-                <View style={[styles.cardBtn, { backgroundColor: service.btnColor }]}>
-                  <Feather name="arrow-left" size={14} color="#FFFFFF" />
+                
+                <View style={styles.cardFooter}>
+                  <View style={[styles.arrowBtn, { backgroundColor: colors.primaryLight }]}>
+                    <Feather name="arrow-left" size={14} color={colors.primary} />
+                  </View>
+                  <Text style={[styles.priceText, { color: colors.foreground }]}>
+                    ابتداءً من <Text style={{ color: colors.primary, fontFamily: "Cairo_700Bold" }}>{service.price}</Text> رس
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
           ))}
         </View>
-
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <Feather name="shield" size={16} color={colors.primary} />
-            <Text style={[styles.infoTitle, { color: colors.foreground }]}>ضمان الجودة</Text>
-            <Text style={[styles.infoDesc, { color: colors.mutedForeground }]}>نضمن رضاك التام</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoItem}>
-            <Feather name="clock" size={16} color={colors.primary} />
-            <Text style={[styles.infoTitle, { color: colors.foreground }]}>في الوقت المحدد</Text>
-            <Text style={[styles.infoDesc, { color: colors.mutedForeground }]}>نصل في الموعد المتفق</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.infoItem}>
-            <Feather name="users" size={16} color={colors.primary} />
-            <Text style={[styles.infoTitle, { color: colors.foreground }]}>فريق محترف</Text>
-            <Text style={[styles.infoDesc, { color: colors.mutedForeground }]}>مدرب و موثوق</Text>
-          </View>
-        </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 14 }]}>
-        <LinearGradient
-          colors={["#60A5FA", "#3B82F6", "#2563EB"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.helpBtn}
-        >
-          <TouchableOpacity style={styles.helpBtnInner} activeOpacity={0.9}>
-            <Text style={styles.sparkle}>✨</Text>
-            <Text style={styles.helpBtnText}>ساعدني</Text>
+      {/* Static Replica of Bottom Tab Bar */}
+      <View style={[styles.tabBarReplica, { paddingBottom: insets.bottom + 12 }]}>
+        <View style={styles.tabItem}>
+          <Feather name="user" size={24} color={colors.mutedForeground} />
+          <Text style={[styles.tabLabel, { color: colors.mutedForeground }]}>الملف الشخصي</Text>
+        </View>
+        <View style={styles.tabItem}>
+          <Feather name="calendar" size={24} color={colors.mutedForeground} />
+          <Text style={[styles.tabLabel, { color: colors.mutedForeground }]}>حجوزاتي</Text>
+        </View>
+        
+        <View style={styles.floatingBtnWrap}>
+          <TouchableOpacity activeOpacity={0.9} style={[styles.floatingBtn]}>
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              style={styles.floatingBtnGradient}
+            >
+              <MaterialCommunityIcons name="broom" size={28} color="#FFFFFF" />
+            </LinearGradient>
+            <Text style={[styles.tabLabel, { color: colors.mutedForeground, marginTop: 4 }]}>احجز الآن</Text>
           </TouchableOpacity>
-        </LinearGradient>
-        <View style={styles.helpTextContainer}>
-          <Text style={[styles.helpTextTitle, { color: colors.foreground }]}>غير متأكد؟</Text>
-          <Text style={[styles.helpTextSub, { color: colors.mutedForeground }]}>
-            ساعدنا في اختيار الخدمة المناسبة لك
-          </Text>
+        </View>
+
+        <View style={styles.tabItem}>
+          <Feather name="message-circle" size={24} color={colors.mutedForeground} />
+          <Text style={[styles.tabLabel, { color: colors.mutedForeground }]}>الرسائل</Text>
+        </View>
+        <View style={styles.tabItem}>
+          <Feather name="home" size={24} color={colors.mutedForeground} />
+          <Text style={[styles.tabLabel, { color: colors.mutedForeground }]}>الرئيسية</Text>
         </View>
       </View>
     </View>
@@ -160,217 +147,169 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingHorizontal: 24,
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowRadius: 10,
     elevation: 2,
   },
-  headerCenter: { alignItems: "center" },
+  headerTitleContainer: {
+    alignItems: "flex-end",
+  },
   headerTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 15,
+    fontSize: 18,
   },
   headerSubtitle: {
     fontFamily: "Cairo_400Regular",
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 13,
   },
-  introCard: {
-    marginHorizontal: 20,
-    borderRadius: 22,
-    padding: 16,
-    flexDirection: "row",
+  categoriesScroll: {
+    paddingHorizontal: 24,
+    gap: 12,
+    marginBottom: 24,
+    paddingVertical: 4,
+  },
+  categoryPill: {
+    flexDirection: "row-reverse",
     alignItems: "center",
-    marginBottom: 22,
-    overflow: "hidden",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  introImage: {
-    width: 80,
-    height: 80,
-  },
-  introTextContainer: {
-    flex: 1,
-    alignItems: "flex-end",
-    paddingHorizontal: 12,
-  },
-  introTitle: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  introDesc: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 11,
-    textAlign: "right",
-    lineHeight: 17,
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    alignItems: "flex-end",
-  },
-  sectionTitle: {
-    fontFamily: "Cairo_700Bold",
+  categoryText: {
+    fontFamily: "Cairo_600SemiBold",
     fontSize: 14,
   },
   grid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     gap: 12,
-    marginBottom: 22,
   },
-  gridCard: {
-    width: "47%",
-    borderRadius: 22,
+  serviceCard: {
+    width: "48%",
+    borderRadius: 24,
     overflow: "hidden",
-    backgroundColor: "#FFFFFF",
+    padding: 12,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  arcContainer: {
-    height: 110,
-    borderBottomLeftRadius: 80,
-    borderBottomRightRadius: 80,
+  categoryIndicator: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1,
   },
-  cardImage: {
-    width: 78,
-    height: 78,
+  categoryIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  serviceImage: {
+    width: "100%",
+    height: 100,
+    marginBottom: 12,
   },
   cardContent: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
     alignItems: "flex-end",
   },
-  cardTitle: {
+  serviceTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 13,
+    fontSize: 15,
     marginBottom: 4,
-    textAlign: "right",
   },
-  cardDesc: {
+  serviceDesc: {
     fontFamily: "Cairo_400Regular",
-    fontSize: 10,
-    textAlign: "right",
+    fontSize: 11,
     marginBottom: 12,
-    lineHeight: 15,
-    minHeight: 30,
   },
-  cardBtn: {
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  arrowBtn: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
   },
-  infoRow: {
-    flexDirection: "row-reverse",
-    marginHorizontal: 20,
-    marginBottom: 22,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    alignItems: "center",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  infoItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  infoTitle: {
-    fontFamily: "Cairo_600SemiBold",
+  priceText: {
+    fontFamily: "Cairo_500Medium",
     fontSize: 11,
-    marginTop: 6,
-    marginBottom: 2,
-    textAlign: "center",
   },
-  infoDesc: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 9,
-    textAlign: "center",
-  },
-  divider: {
-    width: 1,
-    height: 38,
-    backgroundColor: "#EEF1F6",
-  },
-  bottomBar: {
+  tabBarReplica: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 14,
+    height: 84,
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderTopWidth: 0,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  helpBtn: {
-    borderRadius: 100,
-    overflow: "hidden",
-    shadowColor: "#3B82F6",
+  tabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabLabel: {
+    fontFamily: "Cairo_500Medium",
+    fontSize: 10,
+    marginTop: 4,
+  },
+  floatingBtnWrap: {
+    top: -20,
+    alignItems: "center",
+  },
+  floatingBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingBtnGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#16C47F",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
-  },
-  helpBtnInner: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    gap: 6,
-  },
-  sparkle: { fontSize: 14 },
-  helpBtnText: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 13,
-    color: "#FFFFFF",
-  },
-  helpTextContainer: {
-    flex: 1,
-    alignItems: "flex-end",
-    paddingHorizontal: 12,
-  },
-  helpTextTitle: {
-    fontFamily: "Cairo_700Bold",
-    fontSize: 13,
-    marginBottom: 2,
-  },
-  helpTextSub: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 10,
-    textAlign: "right",
+    elevation: 5,
   },
 });

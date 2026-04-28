@@ -1,28 +1,38 @@
 import React, { useRef, useState } from "react";
-import { View, Text, StyleSheet, Dimensions, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, Dimensions, ScrollView, Image, TouchableOpacity, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
-import { GradientButton } from "@/components/GradientButton";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
 
 const ONBOARDING_DATA = [
   {
-    title: "تنظيف احترافي لمنزلك",
-    subtitle: "نقدم لك أفضل خدمات التنظيف المنزلي بأعلى معايير الجودة والاحترافية",
+    id: "1",
+    smallTitle: "تنظيف احترافي",
+    largeTitle: "لمنزلك",
+    subtitle: "خدمات تنظيف منزلية احترافية لراحة بالك ولمعان منزلك",
     image: require("@/assets/images/illustration-sofa.png"),
+    icon: "auto-fix",
   },
   {
-    title: "أفضل المعدات والمواد",
-    subtitle: "نستخدم أحدث المعدات ومواد التنظيف الآمنة والفعالة لضمان نظافة مثالية",
+    id: "2",
+    smallTitle: "تنظيف المكاتب",
+    largeTitle: "والمنشآت",
+    subtitle: "بيئة عمل نظيفة ومنظمة تزيد من إنتاجية فريقك وتلهم الإبداع",
+    image: require("@/assets/images/illustration-office.png"),
+    icon: "office-building",
+  },
+  {
+    id: "3",
+    smallTitle: "احجز بسهولة",
+    largeTitle: "في أي وقت",
+    subtitle: "احجز خدمتك في ثوانٍ معدودة واختر الموعد الذي يناسب جدولك المزدحم",
     image: require("@/assets/images/illustration-bucket.png"),
-  },
-  {
-    title: "فريق عمل مدرب وموثوق",
-    subtitle: "نختار بعناية أفضل الكفاءات لضمان تقديم خدمة تلبي توقعاتك",
-    image: require("@/assets/images/illustration-armchair.png"),
+    icon: "calendar-check",
   },
 ];
 
@@ -39,15 +49,38 @@ export default function OnboardingScreen() {
   };
 
   const handleNext = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (activeIndex < ONBOARDING_DATA.length - 1) {
+      scrollRef.current?.scrollTo({ x: (activeIndex + 1) * width, animated: true });
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
+
+  const handlePrev = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (activeIndex > 0) {
+      scrollRef.current?.scrollTo({ x: (activeIndex - 1) * width, animated: true });
+    }
+  };
+
+  const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.replace("/(tabs)");
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+        <TouchableOpacity onPress={handleSkip} activeOpacity={0.7}>
+          <Text style={[styles.skipText, { color: colors.primary }]}>تخطي</Text>
+        </TouchableOpacity>
         <View style={styles.brandContainer}>
-          <Text style={[styles.brandText, { color: colors.primary }]}>نظافة</Text>
-          <Feather name="home" size={24} color={colors.primary} />
+          <Text style={[styles.brandText, { color: colors.foreground }]}>نظافة</Text>
+          <View style={[styles.homeIconContainer, { backgroundColor: colors.primary }]}>
+            <Feather name="home" size={16} color="#FFFFFF" />
+          </View>
         </View>
       </View>
 
@@ -61,42 +94,73 @@ export default function OnboardingScreen() {
         style={styles.scrollView}
       >
         {ONBOARDING_DATA.map((item, index) => (
-          <View key={index} style={styles.slide}>
-            <View style={styles.imageContainer}>
-              <Image source={item.image} style={styles.image} resizeMode="contain" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={[styles.title, { color: colors.foreground }]}>{item.title}</Text>
-              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{item.subtitle}</Text>
+          <View key={item.id} style={styles.slide}>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
+              {/* Image Area with ARC */}
+              <View style={[styles.imageArea, { backgroundColor: colors.primaryLight + "40" }]}>
+                <Image source={item.image} style={styles.image} resizeMode="contain" />
+              </View>
+
+              {/* Text Content */}
+              <View style={styles.contentContainer}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.smallTitle, { color: colors.mutedForeground }]}>{item.smallTitle}</Text>
+                  <Text style={[styles.largeTitle, { color: colors.primary }]}>{item.largeTitle}</Text>
+                </View>
+
+                <View style={styles.descriptionRow}>
+                  <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
+                    <MaterialCommunityIcons name={item.icon as any} size={18} color={colors.primary} />
+                  </View>
+                  <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{item.subtitle}</Text>
+                </View>
+              </View>
+
+              {/* Pagination Dots */}
+              <View style={styles.pagination}>
+                {ONBOARDING_DATA.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.dot,
+                      { backgroundColor: i === activeIndex ? colors.primary : colors.border },
+                      i === activeIndex && styles.activeDot,
+                    ]}
+                  />
+                ))}
+              </View>
+
+              {/* Navigation Buttons */}
+              <View style={styles.footer}>
+                {activeIndex > 0 ? (
+                  <TouchableOpacity 
+                    onPress={handlePrev} 
+                    style={[styles.prevBtn, { borderColor: colors.border }]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.prevBtnText, { color: colors.mutedForeground }]}>السابق</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.prevBtnPlaceholder} />
+                )}
+
+                <TouchableOpacity onPress={handleNext} activeOpacity={0.9} style={styles.nextBtnContainer}>
+                  <LinearGradient
+                    colors={[colors.primary, colors.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.nextBtn}
+                  >
+                    <Text style={styles.nextBtnText}>
+                      {activeIndex === ONBOARDING_DATA.length - 1 ? "ابدأ الآن" : "التالي"}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         ))}
       </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-        <View style={styles.pagination}>
-          {ONBOARDING_DATA.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                { backgroundColor: index === activeIndex ? colors.primary : colors.border },
-                index === activeIndex && styles.activeDot,
-              ]}
-            />
-          ))}
-        </View>
-
-        <GradientButton
-          title="إبدأ الآن"
-          onPress={handleNext}
-          style={styles.button}
-        />
-        
-        <Text style={[styles.loginText, { color: colors.mutedForeground }]}>
-          لديك حساب؟ <Text style={{ color: colors.primary, fontFamily: "Cairo_600SemiBold" }}>تسجيل الدخول</Text>
-        </Text>
-      </View>
     </View>
   );
 }
@@ -106,8 +170,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 24,
+    zIndex: 10,
+  },
+  skipText: {
+    fontFamily: "Cairo_600SemiBold",
+    fontSize: 16,
   },
   brandContainer: {
     flexDirection: "row",
@@ -116,51 +187,92 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 24,
+    fontSize: 20,
+  },
+  homeIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,
   },
   slide: {
     width,
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    flex: 1,
   },
-  imageContainer: {
-    width: width * 0.8,
-    height: width * 0.8,
-    justifyContent: "center",
+  card: {
+    flex: 1,
+    borderRadius: 32,
+    overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  imageArea: {
+    height: 320,
+    width: "100%",
+    borderBottomLeftRadius: 120,
+    borderBottomRightRadius: 120,
     alignItems: "center",
-    marginBottom: 40,
+    justifyContent: "center",
+    padding: 20,
   },
   image: {
-    width: "100%",
-    height: "100%",
+    width: "80%",
+    height: "80%",
   },
-  textContainer: {
-    alignItems: "center",
+  contentContainer: {
+    padding: 24,
+    alignItems: "flex-end",
   },
-  title: {
+  titleRow: {
+    alignItems: "flex-end",
+    marginBottom: 16,
+  },
+  smallTitle: {
+    fontFamily: "Cairo_600SemiBold",
+    fontSize: 16,
+    marginBottom: -4,
+  },
+  largeTitle: {
     fontFamily: "Cairo_700Bold",
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: 32,
+  },
+  descriptionRow: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
   },
   subtitle: {
+    flex: 1,
     fontFamily: "Cairo_400Regular",
-    fontSize: 16,
-    textAlign: "center",
+    fontSize: 15,
+    textAlign: "right",
     lineHeight: 24,
   },
-  footer: {
-    paddingHorizontal: 24,
-  },
   pagination: {
+    flex: 1,
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "flex-end",
     gap: 8,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   dot: {
     width: 8,
@@ -170,12 +282,40 @@ const styles = StyleSheet.create({
   activeDot: {
     width: 24,
   },
-  button: {
-    marginBottom: 16,
+  footer: {
+    flexDirection: "row",
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    alignItems: "center",
+    gap: 12,
   },
-  loginText: {
-    fontFamily: "Cairo_400Regular",
-    fontSize: 14,
-    textAlign: "center",
+  prevBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prevBtnText: {
+    fontFamily: "Cairo_600SemiBold",
+    fontSize: 16,
+  },
+  prevBtnPlaceholder: {
+    flex: 1,
+  },
+  nextBtnContainer: {
+    flex: 2,
+  },
+  nextBtn: {
+    height: 56,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nextBtnText: {
+    color: "#FFFFFF",
+    fontFamily: "Cairo_700Bold",
+    fontSize: 16,
   },
 });
