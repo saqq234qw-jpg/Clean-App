@@ -19,24 +19,27 @@ export default function LoginScreen() {
   const onSubmit = async () => {
     if (!email || !pwd) return Alert.alert("تنبيه", "أدخل البريد وكلمة المرور");
     setBusy(true);
+
     const { error } = await signIn(email.trim(), pwd);
     if (error) {
       setBusy(false);
       return Alert.alert("خطأ في تسجيل الدخول", error);
     }
+
+    // Fetch role directly from DB — don't rely on context which may not be updated yet
     const { data: { user } } = await supabase.auth.getUser();
-    let role: string | undefined;
+    let role = "user";
     if (user) {
       const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-      role = prof?.role;
+      if (prof?.role) role = prof.role;
     }
+
     setBusy(false);
-    if (role === "provider") {
-      router.replace("/(provider)/index" as any);
-    } else if (role === "admin") {
-      router.replace("/(provider)/index" as any);
+
+    if (role === "provider" || role === "admin") {
+      router.replace("/(provider)" as any);
     } else {
-      router.replace("/(tabs)/index" as any);
+      router.replace("/(tabs)" as any);
     }
   };
 
@@ -91,7 +94,7 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.replace("/(tabs)/index" as any)} style={{ marginTop: 24, alignItems: "center" }}>
+        <TouchableOpacity onPress={() => router.replace("/(tabs)" as any)} style={{ marginTop: 24, alignItems: "center" }}>
           <Text style={{ fontFamily: "Tajawal_500Medium", color: colors.mutedForeground, fontSize: 13 }}>
             تصفح كزائر
           </Text>

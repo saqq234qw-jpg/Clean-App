@@ -12,7 +12,8 @@ export default function Index() {
     AsyncStorage.getItem("onboarded").then((v) => setOnboarded(!!v));
   }, []);
 
-  if (loading || onboarded === null) {
+  // Wait for: fonts/auth loading, onboarded check, AND profile when session exists
+  if (loading || onboarded === null || (session && !profile)) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" }}>
         <ActivityIndicator color="#16C47F" size="large" />
@@ -21,6 +22,7 @@ export default function Index() {
   }
 
   if (!onboarded) return <Redirect href="/onboarding" />;
-  if (session && profile?.role === "provider") return <Redirect href={"/(provider)/index" as any} />;
-  return <Redirect href={"/(tabs)/index" as any} />;
+  if (session && profile?.role === "provider") return <Redirect href={"/(provider)" as any} />;
+  if (session && profile?.role === "admin") return <Redirect href={"/(provider)" as any} />;
+  return <Redirect href={"/(tabs)" as any} />;
 }
