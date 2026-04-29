@@ -1,25 +1,85 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from "react-native";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 
 import ScreenHeader from "@/components/ScreenHeader";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const METHODS = [
-  { id: "bank", l: "حوالة بنكية", s: "خلال 24 ساعة", i: "credit-card", c: "#16C47F" },
+  { id: "bank", l: "حوالة بنكية (IBAN)", s: "خلال 24 ساعة", i: "credit-card", c: "#16C47F" },
   { id: "stc", l: "STC Pay", s: "فوري", i: "smartphone", c: "#4F008C" },
-  { id: "wallet", l: "محفظة محلية", s: "فوري", i: "wallet", c: "#2F80ED" },
+  { id: "wallet", l: "محفظة محلية", s: "فوري", i: "tag", c: "#2F80ED" },
 ];
 
 const QUICK = [100, 250, 500, 1000];
 
 export default function Withdraw() {
   const colors = useColors();
-  const [amount, setAmount] = useState("500");
+  const { session } = useAuth();
+  const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("bank");
-  const balance = 1245.5;
+  const [iban, setIban] = useState("");
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const loadBalance = useCallback(async () => {
+    if (!session?.user) { setLoading(false); return; }
+    const uid = session.user.id;
+    const [{ data: comp }, { data: payouts }, { data: prov }] = await Promise.all([
+      supabase.from("bookings").select("total").eq("provider_id", uid).eq("status", "completed"),
+      supabase.from("payouts").select("amount, status").eq("provider_id", uid),
+      supabase.from("providers").select("iban").eq("id", uid).maybeSingle(),
+    ]);
+    const gross = (comp ?? []).reduce((s: number, r: any) => s + Number(r.total || 0) * 0.85, 0);
+    const out = (payouts ?? []).filter((p: any) => p.status !== "failed").reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+    setBalance(Math.max(0, gross - out));
+    if (prov?.iban) setIban(prov.iban);
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => { loadBalance(); }, [loadBalance]);
+
+  const submit = async () => {
+    if (!session?.user) return Alert.alert("خطأ", "سجّل الدخول أولاً");
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return Alert.alert("تنبيه", "أدخل مبلغ صحيح");
+    if (amt > balance) return Alert.alert("تنبيه", `الرصيد المتاح فقط ${balance.toFixed(2)} ر.س`);
+    if (method === "bank" && !iban.trim()) return Alert.alert("تنبيه", "أدخل رقم الـ IBAN للتحويل البنكي");
+
+    setBusy(true);
+    const { error } = await supabase.from("payouts").insert({
+      provider_id: session.user.id,
+      amount: amt,
+      iban: method === "bank" ? iban.trim() : null,
+      status: "pending",
+    });
+    if (error) {
+      setBusy(false);
+      return Alert.alert("خطأ", error.message);
+    }
+    // Save IBAN on provider for future
+    if (method === "bank" && iban.trim()) {
+      await supabase.from("providers").update({ iban: iban.trim() }).eq("id", session.user.id);
+    }
+    // Notify admin via notifications table (best-effort)
+    await supabase.from("notifications").insert({
+      user_id: session.user.id,
+      title: "طلب سحب جديد",
+      body: `طلب سحب بقيمة ${amt} ر.س`,
+      type: "payout_requested",
+      data: { amount: amt, method },
+    }).then(() => null, () => null);
+
+    setBusy(false);
+    Alert.alert("✓ تم الإرسال", `تم تسجيل طلب السحب بقيمة ${amt} ر.س. سيُحوَّل خلال 24 ساعة.`, [
+      { text: "حسناً", onPress: () => router.back() },
+    ]);
+  };
 
   return (
     <View style={[styles.c, { backgroundColor: colors.background }]}>
@@ -27,7 +87,11 @@ export default function Withdraw() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.balCard}>
           <Text style={styles.balL}>الرصيد المتاح</Text>
-          <Text style={styles.balV}>{balance.toLocaleString()} <Text style={{ fontSize: 14 }}>ر.س</Text></Text>
+          {loading ? (
+            <ActivityIndicator color="#FFF" style={{ marginTop: 8 }} />
+          ) : (
+            <Text style={styles.balV}>{balance.toLocaleString("ar-SA", { maximumFractionDigits: 2 })} <Text style={{ fontSize: 14 }}>ر.س</Text></Text>
+          )}
         </LinearGradient>
 
         <Text style={[styles.l, { color: colors.foreground }]}>المبلغ المراد سحبه</Text>
@@ -37,6 +101,8 @@ export default function Withdraw() {
             style={[styles.amount, { color: colors.foreground }]}
             value={amount}
             onChangeText={setAmount}
+            placeholder="0"
+            placeholderTextColor={colors.mutedForeground}
             keyboardType="numeric"
             textAlign="center"
           />
@@ -48,7 +114,7 @@ export default function Withdraw() {
               <Text style={[styles.qT, { color: amount === String(q) ? "#FFF" : colors.foreground }]}>{q}</Text>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity onPress={() => setAmount(String(balance))} style={[styles.qBtn, { backgroundColor: colors.primaryLight }]}>
+          <TouchableOpacity onPress={() => setAmount(String(Math.floor(balance)))} style={[styles.qBtn, { backgroundColor: colors.primaryLight }]}>
             <Text style={[styles.qT, { color: colors.primary }]}>الكل</Text>
           </TouchableOpacity>
         </View>
@@ -74,11 +140,27 @@ export default function Withdraw() {
           })}
         </View>
 
+        {method === "bank" && (
+          <>
+            <Text style={[styles.l, { color: colors.foreground }]}>رقم الـ IBAN</Text>
+            <View style={[styles.amountInput, { backgroundColor: colors.card, paddingVertical: 14 }]}>
+              <TextInput
+                style={{ fontFamily: "Tajawal_700Bold", fontSize: 14, color: colors.foreground, flex: 1, textAlign: "right" }}
+                value={iban}
+                onChangeText={setIban}
+                placeholder="SA00 0000 0000 0000 0000"
+                placeholderTextColor={colors.mutedForeground}
+                autoCapitalize="characters"
+              />
+            </View>
+          </>
+        )}
+
         <View style={[styles.summary, { backgroundColor: colors.card }]}>
           {[
-            { l: "المبلغ", v: `${amount} ر.س` },
+            { l: "المبلغ", v: `${amount || 0} ر.س` },
             { l: "رسوم السحب", v: "0 ر.س", g: true },
-            { l: "الإجمالي للتحويل", v: `${amount} ر.س`, b: true },
+            { l: "الإجمالي للتحويل", v: `${amount || 0} ر.س`, b: true },
           ].map((r) => (
             <View key={r.l} style={styles.sRow}>
               <Text style={[styles.sV, { color: r.g ? colors.success : colors.foreground, fontFamily: r.b ? "Tajawal_700Bold" : "Tajawal_500Medium", fontSize: r.b ? 14 : 12 }]}>{r.v}</Text>
@@ -89,9 +171,9 @@ export default function Withdraw() {
       </ScrollView>
 
       <View style={[styles.bottom, { backgroundColor: colors.card }]}>
-        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: busy ? colors.muted : colors.primary }]} onPress={submit} disabled={busy}>
           <Feather name="arrow-up" size={16} color="#FFF" />
-          <Text style={styles.btnT}>تأكيد السحب</Text>
+          <Text style={styles.btnT}>{busy ? "جاري الإرسال..." : "تأكيد طلب السحب"}</Text>
         </TouchableOpacity>
       </View>
     </View>

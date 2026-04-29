@@ -42,7 +42,7 @@ export default function FloatingTabBar({ active = null, variant = "user" }: Prop
     { key: "profile", label: "الملف الشخصي", icon: "user", path: "/(provider)/profile" },
     { key: "wallet", label: "المحفظة", icon: "credit-card", path: "/(provider)/wallet" },
     { key: "chat", label: "الرسائل", icon: "message-circle", path: "/(provider)/chat" },
-    { key: "home", label: "طلباتي", icon: "home", path: "/(provider)" },
+    { key: "home", label: "لوحة التحكم", icon: "grid", path: "/(provider)" },
   ];
 
   const items = variant === "provider" ? providerItems : userItems;

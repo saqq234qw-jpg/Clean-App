@@ -229,7 +229,7 @@ export default function HomeScreen() {
                   onPress={() => router.push({ pathname: "/services", params: { cat: cat.id } } as any)}
                 >
                   <LinearGradient
-                    colors={[baseColor, shade(baseColor, -18)]}
+                    colors={[shade(baseColor, 28), shade(baseColor, 8)]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={styles.svcTileInner}
                   >

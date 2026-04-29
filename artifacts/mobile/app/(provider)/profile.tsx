@@ -1,16 +1,68 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Platform } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function ProviderProfile() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const [online, setOnline] = useState(true);
+  const { session, profile, signOut } = useAuth();
+  const [online, setOnline] = useState(false);
+  const [stats, setStats] = useState({ rating: 0, jobs: 0, years: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
+    const uid = session.user.id;
+    const [{ data: prov }, { count: jobsCount }, { data: ratingRow }] = await Promise.all([
+      supabase.from("providers").select("available, rating, total_jobs, experience_years").eq("id", uid).maybeSingle(),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("provider_id", uid).eq("status", "completed"),
+      supabase.from("reviews").select("rating").eq("provider_id", uid),
+    ]);
+    if (prov) setOnline(!!prov.available);
+    const ratings = (ratingRow ?? []).map((r: any) => Number(r.rating || 0)).filter((x: number) => x > 0);
+    const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : Number(prov?.rating || 0);
+    setStats({
+      rating: Number(avg.toFixed(1)),
+      jobs: jobsCount ?? prov?.total_jobs ?? 0,
+      years: prov?.experience_years ?? 0,
+    });
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const toggleOnline = async (v: boolean) => {
+    setOnline(v);
+    if (session?.user) {
+      await supabase.from("providers").update({ available: v }).eq("id", session.user.id);
+    }
+  };
+
+  const onSignOut = () => {
+    Alert.alert("تسجيل الخروج", "هل تريد تسجيل الخروج من حسابك؟", [
+      { text: "إلغاء", style: "cancel" },
+      {
+        text: "خروج",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          router.replace("/login");
+        },
+      },
+    ]);
+  };
+
+  const firstName = profile?.full_name || "—";
 
   return (
     <View style={[styles.c, { backgroundColor: colors.background }]}>
@@ -24,33 +76,40 @@ export default function ProviderProfile() {
         </View>
 
         <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.profileCard}>
-          <Image source={require("@/assets/images/cleaner-fatima.png")} style={styles.avatar} />
-          <Text style={styles.name}>أحمد علي</Text>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" }]}>
+              <Text style={{ fontFamily: "Tajawal_700Bold", color: "#FFF", fontSize: 32 }}>{firstName.charAt(0)}</Text>
+            </View>
+          )}
+          <Text style={styles.name}>{firstName}</Text>
+          {profile?.phone && <Text style={styles.phone}>{profile.phone}</Text>}
           <View style={styles.verifyRow}>
             <MaterialCommunityIcons name="check-decagram" size={14} color="#FFF" />
             <Text style={styles.verifyT}>عامل موثّق</Text>
           </View>
           <View style={styles.statsRow}>
             <View style={styles.statB}>
-              <Text style={styles.statV}>4.9</Text>
+              <Text style={styles.statV}>{stats.rating.toFixed(1)}</Text>
               <Text style={styles.statL}>التقييم</Text>
             </View>
             <View style={styles.sep} />
             <View style={styles.statB}>
-              <Text style={styles.statV}>234</Text>
+              <Text style={styles.statV}>{stats.jobs}</Text>
               <Text style={styles.statL}>الطلبات</Text>
             </View>
             <View style={styles.sep} />
             <View style={styles.statB}>
-              <Text style={styles.statV}>5</Text>
-              <Text style={styles.statL}>سنوات</Text>
+              <Text style={styles.statV}>{stats.years}</Text>
+              <Text style={styles.statL}>سنوات خبرة</Text>
             </View>
           </View>
         </LinearGradient>
 
         <View style={styles.statusBox}>
           <View style={[styles.statusItem, { backgroundColor: colors.card }]}>
-            <Switch value={online} onValueChange={setOnline} trackColor={{ true: colors.primary, false: "#E5E7EB" }} thumbColor="#FFF" />
+            <Switch value={online} onValueChange={toggleOnline} trackColor={{ true: colors.primary, false: "#E5E7EB" }} thumbColor="#FFF" />
             <View style={{ flex: 1, marginHorizontal: 10 }}>
               <Text style={[styles.statusT, { color: colors.foreground }]}>الحالة الحالية</Text>
               <Text style={[styles.statusS, { color: online ? colors.success : colors.mutedForeground }]}>{online ? "متاح للعمل" : "غير متاح"}</Text>
@@ -66,7 +125,7 @@ export default function ProviderProfile() {
             { i: "edit-3", l: "تعديل البروفايل المهني", p: "/provider-edit", c: "#16C47F", bg: "#D7F5E8" },
             { i: "clock", l: "مواعيد العمل", p: "/provider-hours", c: "#2F80ED", bg: "#DBEAFE" },
             { i: "credit-card", l: "المحفظة والأرباح", p: "/(provider)/wallet", c: "#F59E0B", bg: "#FEF3C7" },
-            { i: "list", l: "طلباتي السابقة", p: "/(provider)/bookings", c: "#8B5CF6", bg: "#EDE9FE" },
+            { i: "list", l: "كل طلباتي", p: "/(provider)/bookings", c: "#8B5CF6", bg: "#EDE9FE" },
             { i: "users", l: "دعوة عمال آخرين", p: "/provider-referrals", c: "#EC4899", bg: "#FCE7F3" },
             { i: "help-circle", l: "المساعدة والدعم", p: "/help", c: "#FB923C", bg: "#FFEDD5" },
             { i: "settings", l: "الإعدادات", p: "/settings", c: "#6B7280", bg: "#F3F4F6" },
@@ -80,16 +139,12 @@ export default function ProviderProfile() {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card }]} onPress={() => router.replace("/onboarding")}>
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card }]} onPress={onSignOut}>
             <Feather name="chevron-left" size={18} color={colors.mutedForeground} />
             <Text style={[styles.menuT, { color: colors.danger }]}>تسجيل الخروج</Text>
             <View style={[styles.menuI, { backgroundColor: colors.dangerLight }]}>
               <Feather name="log-out" size={16} color={colors.danger} />
             </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={{ alignItems: "center", padding: 12 }} onPress={() => router.replace("/(tabs)")}>
-            <Text style={{ fontFamily: "Tajawal_700Bold", fontSize: 12, color: colors.accent }}>التبديل لحساب عميل</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -104,7 +159,8 @@ const styles = StyleSheet.create({
   profileCard: { marginHorizontal: 16, padding: 18, borderRadius: 22, alignItems: "center", marginBottom: 14 },
   avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: "#FFF" },
   name: { color: "#FFF", fontFamily: "Tajawal_700Bold", fontSize: 18, marginTop: 10 },
-  verifyRow: { flexDirection: "row-reverse", alignItems: "center", gap: 4, marginTop: 4, backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 },
+  phone: { color: "rgba(255,255,255,0.9)", fontFamily: "Tajawal_500Medium", fontSize: 12, marginTop: 2 },
+  verifyRow: { flexDirection: "row-reverse", alignItems: "center", gap: 4, marginTop: 6, backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 100 },
   verifyT: { color: "#FFF", fontFamily: "Tajawal_700Bold", fontSize: 11 },
   statsRow: { flexDirection: "row-reverse", marginTop: 14, backgroundColor: "rgba(255,255,255,0.18)", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 16, gap: 14, alignItems: "center" },
   statB: { alignItems: "center" },

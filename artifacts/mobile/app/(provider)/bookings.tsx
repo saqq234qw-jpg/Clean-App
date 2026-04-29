@@ -1,23 +1,83 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
-const TABS = ["جديدة", "نشطة", "مكتملة"];
-const ORDERS = [
-  { id: "1", t: "تنظيف عميق", c: "خالد العتيبي", date: "اليوم 10:00 ص", addr: "حي النخيل", p: "150", st: "نشطة", stColor: "#16C47F" },
-  { id: "2", t: "تنظيف منزل", c: "سعد الحربي", date: "اليوم 1:00 م", addr: "حي العليا", p: "85", st: "جديدة", stColor: "#2F80ED" },
-  { id: "3", t: "تنظيف فلل", c: "محمد القحطاني", date: "غداً 9:00 ص", addr: "حي الصحافة", p: "250", st: "نشطة", stColor: "#16C47F" },
-  { id: "4", t: "تنظيف كنب", c: "نورة الفهد", date: "أمس 3:00 م", addr: "حي الورود", p: "120", st: "مكتمل", stColor: "#94A3B8" },
+const TABS = [
+  { key: "new", label: "جديدة", statuses: ["pending"] },
+  { key: "active", label: "نشطة", statuses: ["accepted", "on_the_way", "in_progress"] },
+  { key: "done", label: "مكتملة", statuses: ["completed"] },
 ];
+
+const statusColor = (s: string, c: any) => {
+  if (s === "pending") return "#2F80ED";
+  if (s === "accepted") return c.primary;
+  if (s === "on_the_way") return "#F59E0B";
+  if (s === "in_progress") return "#8B5CF6";
+  if (s === "completed") return c.success;
+  return c.mutedForeground;
+};
+
+const statusLabel = (s: string) => {
+  return ({
+    pending: "جديدة",
+    accepted: "مقبولة",
+    on_the_way: "في الطريق",
+    in_progress: "جاري التنفيذ",
+    completed: "مكتملة",
+    cancelled: "ملغاة",
+    rejected: "مرفوضة",
+  } as Record<string, string>)[s] || s;
+};
+
+const fmtTime = (iso: string | null) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const t = d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" });
+  const same = d.toDateString() === new Date().toDateString();
+  return same ? `اليوم ${t}` : d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" }) + ` ${t}`;
+};
 
 export default function ProviderBookings() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { session } = useAuth();
   const [tab, setTab] = useState(0);
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("bookings")
+      .select("id, status, total, scheduled_at, services(title_ar), profiles!bookings_user_id_fkey(full_name), addresses(district, city, street)")
+      .eq("provider_id", session.user.id)
+      .order("created_at", { ascending: false });
+    setRows(data ?? []);
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const t = TABS[tab];
+    return rows.filter((r) => t.statuses.includes(r.status));
+  }, [rows, tab]);
 
   return (
     <View style={[styles.c, { backgroundColor: colors.background }]}>
@@ -27,71 +87,70 @@ export default function ProviderBookings() {
           <Text style={[styles.hT, { color: colors.foreground }]}>طلباتي</Text>
           <Text style={[styles.hS, { color: colors.mutedForeground }]}>إدارة جميع الطلبات</Text>
         </View>
-        <TouchableOpacity><Feather name="filter" size={20} color={colors.foreground} /></TouchableOpacity>
+        <View style={{ width: 22 }} />
       </View>
 
       <View style={styles.tabs}>
         {TABS.map((t, i) => (
-          <TouchableOpacity key={t} onPress={() => setTab(i)} style={[styles.tab, tab === i && { backgroundColor: colors.primary }]}>
-            <Text style={[styles.tabT, { color: tab === i ? "#FFF" : colors.foreground }]}>{t}</Text>
+          <TouchableOpacity key={t.key} onPress={() => setTab(i)} style={[styles.tab, tab === i && { backgroundColor: colors.primary }]}>
+            <Text style={[styles.tabT, { color: tab === i ? "#FFF" : colors.foreground }]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, gap: 10 }} showsVerticalScrollIndicator={false}>
-        {ORDERS.map((o) => (
-          <TouchableOpacity key={o.id} style={[styles.card, { backgroundColor: colors.card }]} onPress={() => router.push("/booking-details")}>
-            <View style={styles.cardTop}>
-              <View style={[styles.stBadge, { backgroundColor: o.stColor + "22" }]}>
-                <Text style={[styles.stT, { color: o.stColor }]}>{o.st}</Text>
-              </View>
-              <Text style={[styles.cardT, { color: colors.foreground }]}>{o.t}</Text>
-            </View>
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-            <View style={{ gap: 6 }}>
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoV, { color: colors.foreground }]}>{o.c}</Text>
-                <Feather name="user" size={12} color={colors.mutedForeground} />
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoV, { color: colors.foreground }]}>{o.date}</Text>
-                <Feather name="clock" size={12} color={colors.mutedForeground} />
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoV, { color: colors.foreground }]}>{o.addr}</Text>
-                <Feather name="map-pin" size={12} color={colors.mutedForeground} />
-              </View>
-            </View>
-            <View style={styles.cardFoot}>
-              {o.st === "جديدة" ? (
-                <>
-                  <TouchableOpacity style={[styles.primBtn, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.primT}>قبول</Text>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, gap: 10 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
+        {loading ? (
+          <View style={{ padding: 40, alignItems: "center" }}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={{ padding: 40, alignItems: "center", gap: 10 }}>
+            <MaterialCommunityIcons name="clipboard-list-outline" size={56} color={colors.mutedForeground} />
+            <Text style={{ fontFamily: "Tajawal_700Bold", fontSize: 14, color: colors.foreground }}>لا توجد طلبات في هذه الفئة</Text>
+          </View>
+        ) : (
+          filtered.map((o) => {
+            const stColor = statusColor(o.status, colors);
+            const addr = [o.addresses?.district, o.addresses?.city].filter(Boolean).join("، ") || o.addresses?.street || "—";
+            return (
+              <TouchableOpacity key={o.id} style={[styles.card, { backgroundColor: colors.card }]} onPress={() => router.push(`/(provider)/booking-details?id=${o.id}` as any)} activeOpacity={0.92}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.stBadge, { backgroundColor: stColor + "22" }]}>
+                    <Text style={[styles.stT, { color: stColor }]}>{statusLabel(o.status)}</Text>
+                  </View>
+                  <Text style={[styles.cardT, { color: colors.foreground }]}>{o.services?.title_ar || "خدمة"}</Text>
+                </View>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                <View style={{ gap: 6 }}>
+                  <View style={styles.infoRow}>
+                    <Text style={[styles.infoV, { color: colors.foreground }]}>{o.profiles?.full_name || "عميل"}</Text>
+                    <Feather name="user" size={12} color={colors.mutedForeground} />
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Text style={[styles.infoV, { color: colors.foreground }]}>{fmtTime(o.scheduled_at)}</Text>
+                    <Feather name="clock" size={12} color={colors.mutedForeground} />
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Text style={[styles.infoV, { color: colors.foreground }]} numberOfLines={1}>{addr}</Text>
+                    <Feather name="map-pin" size={12} color={colors.mutedForeground} />
+                  </View>
+                </View>
+                <View style={styles.cardFoot}>
+                  <TouchableOpacity style={[styles.primBtn, { backgroundColor: colors.primary }]} onPress={() => router.push(`/(provider)/booking-details?id=${o.id}` as any)}>
+                    <Text style={styles.primT}>عرض التفاصيل</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.secBtn, { borderColor: colors.border }]}>
-                    <Text style={[styles.secT, { color: colors.foreground }]}>رفض</Text>
-                  </TouchableOpacity>
-                </>
-              ) : o.st === "نشطة" ? (
-                <>
-                  <TouchableOpacity style={[styles.primBtn, { backgroundColor: colors.primary }]} onPress={() => router.push("/tracking")}>
-                    <Text style={styles.primT}>التوجه للموقع</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.secBtn, { borderColor: colors.border }]}>
-                    <Feather name="message-circle" size={16} color={colors.foreground} />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity style={[styles.primBtn, { backgroundColor: colors.muted, flex: 1 }]}>
-                  <Text style={[styles.primT, { color: colors.foreground }]}>عرض الفاتورة</Text>
-                </TouchableOpacity>
-              )}
-              <View style={{ flex: 1, alignItems: "flex-end" }}>
-                <Text style={[styles.priceV, { color: colors.primary }]}>{o.p} ر.س</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+                  <View style={{ flex: 1, alignItems: "flex-end" }}>
+                    <Text style={[styles.priceV, { color: colors.primary }]}>{o.total} ر.س</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -112,11 +171,9 @@ const styles = StyleSheet.create({
   stT: { fontFamily: "Tajawal_700Bold", fontSize: 10 },
   divider: { height: 1, marginBottom: 10 },
   infoRow: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
-  infoV: { fontFamily: "Tajawal_500Medium", fontSize: 11 },
+  infoV: { fontFamily: "Tajawal_500Medium", fontSize: 11, flex: 1, textAlign: "right" },
   cardFoot: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 12 },
   primBtn: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 100 },
   primT: { color: "#FFF", fontFamily: "Tajawal_700Bold", fontSize: 11 },
-  secBtn: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 100, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  secT: { fontFamily: "Tajawal_700Bold", fontSize: 11 },
   priceV: { fontFamily: "Tajawal_700Bold", fontSize: 14 },
 });

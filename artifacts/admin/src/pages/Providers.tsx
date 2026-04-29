@@ -1,5 +1,28 @@
+import { useEffect, useState } from "react";
 import { CRUDPage } from "@/components/CRUDPage";
+import { supabase } from "@/lib/supabase";
+
 export default function Providers() {
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [providerIds, setProviderIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("profiles").select("id, full_name, phone, email, role").order("created_at", { ascending: false }),
+      supabase.from("providers").select("id"),
+    ]).then(([{ data: profs }, { data: provs }]) => {
+      setProfiles(profs ?? []);
+      setProviderIds(new Set((provs ?? []).map((p: any) => p.id)));
+    });
+  }, []);
+
+  const profileOptions = profiles
+    .filter((p) => !providerIds.has(p.id))
+    .map((p) => ({
+      value: p.id,
+      label: `${p.full_name || "بدون اسم"} — ${p.phone || p.email || "—"} (${p.role || "user"})`,
+    }));
+
   return (
     <CRUDPage
       title="مقدمو الخدمة"
@@ -9,7 +32,14 @@ export default function Providers() {
       orderBy="rating"
       defaultValues={{ status: "pending", available: false, rating: 0, total_jobs: 0, hourly_rate: 50, experience_years: 0 }}
       fields={[
-        { key: "id", label: "معرف الحساب (UUID من profiles)", required: true },
+        {
+          key: "id",
+          label: "اختر الحساب من قائمة المستخدمين",
+          required: true,
+          type: "select",
+          options: profileOptions,
+          placeholder: profileOptions.length === 0 ? "لا يوجد مستخدمون متاحون — أضف مستخدماً أولاً من صفحة المستخدمين" : undefined,
+        },
         { key: "bio", label: "نبذة", type: "textarea" },
         { key: "status", label: "الحالة", type: "select", options: [
           { value: "pending", label: "قيد المراجعة" },

@@ -57,6 +57,7 @@ function RootLayoutNav() {
       <Stack.Screen name="withdraw" options={{ headerShown: false }} />
       <Stack.Screen name="provider-notifications" options={{ headerShown: false }} />
       <Stack.Screen name="provider-referrals" options={{ headerShown: false }} />
+      <Stack.Screen name="statement" options={{ headerShown: false }} />
     </Stack>
   );
 }
