@@ -44,7 +44,6 @@ export default function Providers() {
         { key: "status", label: "الحالة", type: "select", options: [
           { value: "pending", label: "قيد المراجعة" },
           { value: "approved", label: "مقبول" },
-          { value: "rejected", label: "مرفوض" },
           { value: "suspended", label: "موقوف" },
         ]},
         { key: "available", label: "متاح حالياً", type: "boolean" },

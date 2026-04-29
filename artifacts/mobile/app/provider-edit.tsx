@@ -1,26 +1,56 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform, Alert, ActivityIndicator } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import ScreenHeader from "@/components/ScreenHeader";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const SERVICES = ["تنظيف منازل", "تنظيف عميق", "تنظيف مكاتب", "تنظيف فلل", "تنظيف كنب", "تنظيف سجاد", "تنظيف مطابخ"];
 const AREAS = ["النخيل", "العليا", "الورود", "الصحافة", "الياسمين", "الملقا", "حطين"];
 
 export default function ProviderEdit() {
   const colors = useColors();
-  const [name, setName] = useState("أحمد علي");
-  const [bio, setBio] = useState("عامل نظافة محترف بخبرة 5 سنوات");
-  const [exp, setExp] = useState("5");
-  const [price, setPrice] = useState("85");
+  const { session, profile, refreshProfile } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [exp, setExp] = useState("");
+  const [price, setPrice] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
-  const [services, setServices] = useState(["تنظيف منازل", "تنظيف عميق"]);
-  const [areas, setAreas] = useState(["النخيل", "العليا"]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [services, setServices] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
 
-  const toggle = (arr: string[], setArr: any, v: string) => arr.includes(v) ? setArr(arr.filter((x) => x !== v)) : setArr([...arr, v]);
+  const load = useCallback(async () => {
+    if (!session?.user) { setLoading(false); return; }
+    const uid = session.user.id;
+    const [{ data: prof }, { data: prov }] = await Promise.all([
+      supabase.from("profiles").select("full_name, avatar_url").eq("id", uid).maybeSingle(),
+      supabase.from("providers").select("bio, experience_years, hourly_rate, services, areas").eq("id", uid).maybeSingle(),
+    ]);
+    if (prof) {
+      setName(prof.full_name || "");
+      setAvatarUrl(prof.avatar_url || null);
+    }
+    if (prov) {
+      setBio(prov.bio || "");
+      setExp(String(prov.experience_years || ""));
+      setPrice(String(prov.hourly_rate || ""));
+      setServices(Array.isArray(prov.services) ? prov.services : []);
+      setAreas(Array.isArray(prov.areas) ? prov.areas : []);
+    }
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const toggle = (arr: string[], setArr: any, v: string) =>
+    arr.includes(v) ? setArr(arr.filter((x) => x !== v)) : setArr([...arr, v]);
 
   const pickImage = async () => {
     if (Platform.OS === "web") return;
@@ -28,12 +58,78 @@ export default function ProviderEdit() {
     if (!r.canceled) setPhoto(r.assets[0].uri);
   };
 
+  const save = async () => {
+    if (!session?.user) return;
+    const uid = session.user.id;
+    setSaving(true);
+    try {
+      let newAvatarUrl = avatarUrl;
+
+      if (photo) {
+        const ext = photo.split(".").pop() || "jpg";
+        const fileName = `${uid}-${Date.now()}.${ext}`;
+        const response = await fetch(photo);
+        const blob = await response.blob();
+        const { error: upErr } = await supabase.storage.from("avatars").upload(fileName, blob, { upsert: true, contentType: `image/${ext}` });
+        if (!upErr) {
+          const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+          newAvatarUrl = publicUrl;
+        }
+      }
+
+      const providerPayload: Record<string, any> = {
+        bio: bio.trim(),
+        experience_years: Number(exp) || 0,
+        hourly_rate: Number(price) || 0,
+      };
+      if (services.length > 0) providerPayload.services = services;
+      if (areas.length > 0) providerPayload.areas = areas;
+
+      const [profileResult, providerResult] = await Promise.all([
+        supabase.from("profiles").update({ full_name: name.trim(), avatar_url: newAvatarUrl }).eq("id", uid),
+        supabase.from("providers").update(providerPayload).eq("id", uid),
+      ]);
+
+      if (providerResult.error?.message?.includes("column") && providerResult.error.message.includes("does not exist")) {
+        const { bio: b, experience_years: e, hourly_rate: h } = providerPayload;
+        await supabase.from("providers").update({ bio: b, experience_years: e, hourly_rate: h }).eq("id", uid);
+      }
+
+      await refreshProfile();
+      Alert.alert("✓ تم الحفظ", "تم تحديث بياناتك بنجاح", [
+        { text: "حسناً", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      Alert.alert("خطأ", e?.message || "فشل حفظ البيانات");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.c, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  const avatarSrc = photo ? { uri: photo } : avatarUrl ? { uri: avatarUrl } : null;
+
   return (
     <View style={[styles.c, { backgroundColor: colors.background }]}>
       <ScreenHeader title="البروفايل المهني" subtitle="تحديث معلوماتك للعملاء" />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={styles.avW}>
-          <Image source={photo ? { uri: photo } : require("@/assets/images/cleaner-fatima.png")} style={styles.av} />
+          {avatarSrc ? (
+            <Image source={avatarSrc} style={styles.av} />
+          ) : (
+            <View style={[styles.av, { backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center" }]}>
+              <Text style={{ fontFamily: "Tajawal_700Bold", fontSize: 32, color: colors.primary }}>
+                {name.charAt(0) || "م"}
+              </Text>
+            </View>
+          )}
           <TouchableOpacity style={[styles.cam, { backgroundColor: colors.primary }]} onPress={pickImage}>
             <Feather name="camera" size={14} color="#FFF" />
           </TouchableOpacity>
@@ -92,8 +188,8 @@ export default function ProviderEdit() {
       </ScrollView>
 
       <View style={[styles.bottom, { backgroundColor: colors.card }]}>
-        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
-          <Text style={styles.saveT}>حفظ التغييرات</Text>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: saving ? colors.muted : colors.primary }]} onPress={save} disabled={saving}>
+          {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveT}>حفظ التغييرات</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -102,7 +198,7 @@ export default function ProviderEdit() {
 
 const styles = StyleSheet.create({
   c: { flex: 1 },
-  avW: { alignSelf: "center", marginBottom: 4, position: "relative" },
+  avW: { alignSelf: "center", marginBottom: 4, position: "relative", marginTop: 12 },
   av: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: "#FFF" },
   cam: { position: "absolute", bottom: 0, left: 0, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#FFF" },
   changeT: { fontFamily: "Tajawal_700Bold", fontSize: 12, textAlign: "center", marginBottom: 16 },

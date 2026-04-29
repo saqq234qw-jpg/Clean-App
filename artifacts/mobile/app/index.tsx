@@ -21,6 +21,6 @@ export default function Index() {
   }
 
   if (!onboarded) return <Redirect href="/onboarding" />;
-  if (session && profile?.role === "provider") return <Redirect href={"/(provider)" as any} />;
-  return <Redirect href={"/(tabs)" as any} />;
+  if (session && profile?.role === "provider") return <Redirect href={"/(provider)/index" as any} />;
+  return <Redirect href={"/(tabs)/index" as any} />;
 }

@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -7,12 +7,7 @@ import { useColors } from "@/hooks/useColors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/lib/auth";
 import GuestEmpty from "@/components/GuestEmpty";
-import FloatingTabBar from "@/components/FloatingTabBar";
-
-const ADDRESSES = [
-  { id: "1", title: "المنزل", address: "حي النخيل، شارع الأمير نايف، الرياض", icon: "home", color: "#16C47F", default: true },
-  { id: "2", title: "العمل", address: "مركز المملكة، طريق الملك فهد، الرياض", icon: "briefcase", color: "#2F80ED" },
-];
+import { supabase } from "@/lib/supabase";
 
 const MENU_ITEMS = [
   { id: "1", title: "طلباتي", subtitle: "إدارة جميع حجوزاتك", icon: "shopping-bag", color: "#16C47F", path: "/(tabs)/bookings" },
@@ -27,18 +22,48 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { session, profile, signOut } = useAuth();
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [bookingsCount, setBookingsCount] = useState(0);
+
+  const loadData = useCallback(async () => {
+    if (!session?.user) return;
+    const uid = session.user.id;
+    const [{ data: addrs }, { count }] = await Promise.all([
+      supabase.from("addresses").select("*").eq("user_id", uid).order("is_default", { ascending: false }),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("user_id", uid),
+    ]);
+    if (addrs) setAddresses(addrs);
+    if (count !== null) setBookingsCount(count);
+  }, [session]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const onSignOut = () => {
+    Alert.alert("تسجيل الخروج", "هل تريد تسجيل الخروج من حسابك؟", [
+      { text: "إلغاء", style: "cancel" },
+      {
+        text: "خروج",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          router.replace("/login");
+        },
+      },
+    ]);
+  };
+
   if (!session) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <GuestEmpty title="حسابك الشخصي" subtitle="سجّل دخولك لإدارة عناوينك وحجوزاتك" icon="account-circle-outline" />
-        <FloatingTabBar active="profile" />
       </View>
     );
   }
 
+  const initials = (profile?.full_name || "م").trim().split(" ").map((s) => s[0]).slice(0, 2).join("");
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerActions}>
            <TouchableOpacity style={styles.iconCircle} onPress={() => router.push("/settings")}>
@@ -56,105 +81,86 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
         <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
           <LinearGradient
             colors={[colors.primaryLight + "40", "transparent"]}
             style={StyleSheet.absoluteFill}
           />
           <View style={styles.profileTop}>
-            <TouchableOpacity style={styles.chevron}>
-              <Feather name="chevron-left" size={24} color={colors.mutedForeground} />
+            <TouchableOpacity style={styles.chevron} onPress={onSignOut}>
+              <Feather name="log-out" size={20} color={colors.danger} />
             </TouchableOpacity>
             
             <View style={styles.profileInfo}>
-               <Text style={[styles.userName, { color: colors.foreground }]}>أحمد محمد</Text>
-               <Text style={[styles.userContact, { color: colors.mutedForeground }]}>+966 50 123 4567</Text>
-               <Text style={[styles.userContact, { color: colors.mutedForeground }]}>ahmed@email.com</Text>
+               <Text style={[styles.userName, { color: colors.foreground }]}>{profile?.full_name || "المستخدم"}</Text>
+               {!!profile?.phone && <Text style={[styles.userContact, { color: colors.mutedForeground }]}>{profile.phone}</Text>}
+               {!!profile?.email && <Text style={[styles.userContact, { color: colors.mutedForeground }]}>{profile.email}</Text>}
                
                <View style={[styles.premiumPill, { backgroundColor: colors.successLight }]}>
-                  <MaterialCommunityIcons name="diamond-stone" size={14} color={colors.success} />
-                  <Text style={[styles.premiumText, { color: colors.success }]}>عضو مميز | لديك 240 نقطة</Text>
+                  <MaterialCommunityIcons name="shopping-outline" size={14} color={colors.success} />
+                  <Text style={[styles.premiumText, { color: colors.success }]}>{bookingsCount} طلب مكتمل</Text>
                </View>
             </View>
 
-            <View style={styles.avatarWrap}>
-              <Image source={require("@/assets/images/user-ahmed.png")} style={styles.avatar} />
+            <TouchableOpacity style={styles.avatarWrap} onPress={() => router.push("/edit-profile")}>
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center" }]}>
+                  <Text style={{ fontFamily: "Tajawal_700Bold", fontSize: 28, color: colors.primary }}>{initials}</Text>
+                </View>
+              )}
               <TouchableOpacity style={[styles.cameraBadge, { backgroundColor: colors.primary }]} onPress={() => router.push("/edit-profile")}>
                 <Feather name="camera" size={12} color="#FFFFFF" />
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Saved Addresses */}
         <View style={styles.sectionHeader}>
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>عرض الكل</Text>
+          <TouchableOpacity onPress={() => router.push("/address-form")}>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>إضافة</Text>
           </TouchableOpacity>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>العناوين المحفوظة</Text>
         </View>
 
         <View style={styles.sectionContent}>
-          {ADDRESSES.map((item) => (
-            <View key={item.id} style={[styles.addressItem, { backgroundColor: colors.card }]}>
-              <TouchableOpacity>
-                <Feather name="more-vertical" size={20} color={colors.mutedForeground} />
-              </TouchableOpacity>
-              <View style={styles.itemTextWrap}>
-                <View style={styles.itemTitleRow}>
-                  {item.default && (
-                    <View style={[styles.defaultBadge, { backgroundColor: colors.successLight }]}>
-                      <Text style={[styles.defaultBadgeText, { color: colors.success }]}>افتراضي</Text>
-                    </View>
-                  )}
-                  <Text style={[styles.itemTitle, { color: colors.foreground }]}>{item.title}</Text>
-                </View>
-                <Text style={[styles.itemSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
-                  {item.address}
-                </Text>
-              </View>
-              <View style={[styles.itemIconBox, { backgroundColor: item.color + "20" }]}>
-                 <Feather name={item.icon as any} size={20} color={item.color} />
-              </View>
-            </View>
-          ))}
-          <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]} onPress={() => router.push("/address-form")}>
-             <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة عنوان جديد</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Payment Methods */}
-        <View style={styles.sectionHeader}>
-          <TouchableOpacity onPress={() => router.push("/payment-methods")}>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>عرض الكل</Text>
-          </TouchableOpacity>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>وسائل الدفع</Text>
-        </View>
-
-        <View style={styles.sectionContent}>
-          <View style={[styles.addressItem, { backgroundColor: colors.card }]}>
-            <TouchableOpacity>
-              <Feather name="more-vertical" size={20} color={colors.mutedForeground} />
+          {addresses.length === 0 ? (
+            <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]} onPress={() => router.push("/address-form")}>
+               <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة عنوان جديد</Text>
             </TouchableOpacity>
-            <View style={styles.itemTextWrap}>
-               <View style={styles.itemTitleRow}>
-                 <View style={[styles.defaultBadge, { backgroundColor: colors.successLight }]}>
-                   <Text style={[styles.defaultBadgeText, { color: colors.success }]}>افتراضي</Text>
-                 </View>
-                 <Text style={[styles.itemTitle, { color: colors.foreground }]}>visa **** 4242</Text>
-               </View>
-            </View>
-            <View style={styles.paymentLogoWrap}>
-               <MaterialCommunityIcons name="credit-card" size={24} color={colors.accent} />
-            </View>
-          </View>
-          <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]} onPress={() => router.push("/payment-form")}>
-             <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة وسيلة دفع جديدة</Text>
-          </TouchableOpacity>
+          ) : (
+            <>
+              {addresses.map((item) => (
+                <View key={item.id} style={[styles.addressItem, { backgroundColor: colors.card }]}>
+                  <TouchableOpacity>
+                    <Feather name="more-vertical" size={20} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                  <View style={styles.itemTextWrap}>
+                    <View style={styles.itemTitleRow}>
+                      {item.is_default && (
+                        <View style={[styles.defaultBadge, { backgroundColor: colors.successLight }]}>
+                          <Text style={[styles.defaultBadgeText, { color: colors.success }]}>افتراضي</Text>
+                        </View>
+                      )}
+                      <Text style={[styles.itemTitle, { color: colors.foreground }]}>{item.title || "عنوان"}</Text>
+                    </View>
+                    <Text style={[styles.itemSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {item.address || item.street || ""}
+                    </Text>
+                  </View>
+                  <View style={[styles.itemIconBox, { backgroundColor: "#16C47F20" }]}>
+                     <Feather name="map-pin" size={20} color="#16C47F" />
+                  </View>
+                </View>
+              ))}
+              <TouchableOpacity style={[styles.addBtn, { borderColor: colors.primary }]} onPress={() => router.push("/address-form")}>
+                 <Text style={[styles.addBtnText, { color: colors.primary }]}>+ إضافة عنوان جديد</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
-        {/* Menu List */}
         <View style={[styles.menuContainer, { backgroundColor: colors.card }]}>
           {MENU_ITEMS.map((item, index) => (
             <TouchableOpacity 
@@ -176,6 +182,14 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <TouchableOpacity
+          style={[styles.signOutBtn, { backgroundColor: "#FEE2E2" }]}
+          onPress={onSignOut}
+        >
+          <Feather name="log-out" size={18} color="#EF4444" />
+          <Text style={[styles.signOutText, { color: "#EF4444" }]}>تسجيل الخروج</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </View>
@@ -362,12 +376,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  paymentLogoWrap: {
-    width: 48,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   addBtn: {
     height: 56,
     borderRadius: 18,
@@ -418,15 +426,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  switchBtn: {
-    marginHorizontal: 16,
-    marginTop: 14,
-    paddingVertical: 14,
-    borderRadius: 16,
+  signOutBtn: {
+    marginHorizontal: 24,
+    marginTop: 4,
+    marginBottom: 16,
+    height: 52,
+    borderRadius: 18,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
   },
-  switchT: { fontFamily: "Tajawal_700Bold", fontSize: 13 },
+  signOutText: {
+    fontFamily: "Tajawal_700Bold",
+    fontSize: 14,
+  },
 });

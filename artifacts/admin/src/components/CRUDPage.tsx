@@ -67,11 +67,14 @@ export function CRUDPage({
   }
   async function save() {
     setErr("");
-    let payload = { ...form };
-    fields.forEach((f) => {
-      if (f.type === "number" && payload[f.key] !== undefined && payload[f.key] !== "")
-        payload[f.key] = Number(payload[f.key]);
-      if (f.type === "boolean") payload[f.key] = !!payload[f.key];
+    let payload: Record<string, any> = {};
+    fields.filter((f) => !f.hideInForm).forEach((f) => {
+      let v = form[f.key];
+      if (v === undefined || v === null) return;
+      if (f.type === "number" && v !== "") v = Number(v);
+      if (f.type === "boolean") v = !!v;
+      if (typeof v === "object" && !Array.isArray(v)) return;
+      payload[f.key] = v;
     });
     if (beforeInsert) payload = beforeInsert(payload);
     if (editing) {

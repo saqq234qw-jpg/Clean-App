@@ -16,29 +16,13 @@ export default function LoginScreen() {
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const goHome = (role: string | undefined) => {
-    if (role === "provider") {
-      router.replace("/(provider)" as any);
-    } else if (role === "admin") {
-      router.replace("/(provider)" as any);
-    } else {
-      router.replace("/(tabs)" as any);
-    }
-    // Fallback navigation in case the group route fails on web
-    setTimeout(() => {
-      try {
-        router.replace((role === "provider" ? "/(provider)/" : "/(tabs)/") as any);
-      } catch {}
-    }, 50);
-  };
-
   const onSubmit = async () => {
     if (!email || !pwd) return Alert.alert("تنبيه", "أدخل البريد وكلمة المرور");
     setBusy(true);
     const { error } = await signIn(email.trim(), pwd);
     if (error) {
       setBusy(false);
-      return Alert.alert("خطأ", error);
+      return Alert.alert("خطأ في تسجيل الدخول", error);
     }
     const { data: { user } } = await supabase.auth.getUser();
     let role: string | undefined;
@@ -47,7 +31,13 @@ export default function LoginScreen() {
       role = prof?.role;
     }
     setBusy(false);
-    goHome(role);
+    if (role === "provider") {
+      router.replace("/(provider)/index" as any);
+    } else if (role === "admin") {
+      router.replace("/(provider)/index" as any);
+    } else {
+      router.replace("/(tabs)/index" as any);
+    }
   };
 
   return (
@@ -101,7 +91,7 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.replace("/(tabs)" as any)} style={{ marginTop: 24, alignItems: "center" }}>
+        <TouchableOpacity onPress={() => router.replace("/(tabs)/index" as any)} style={{ marginTop: 24, alignItems: "center" }}>
           <Text style={{ fontFamily: "Tajawal_500Medium", color: colors.mutedForeground, fontSize: 13 }}>
             تصفح كزائر
           </Text>
